@@ -23,8 +23,10 @@ function reconnect () {
 function init () {
   server.connection.onmessage = (e) => {
     const json = JSON.parse(e.data)
-    if (onList[json.type]) {
+    if (json.type === 'HeartBeat') {
       onList[json.type](json.data)
+    } else if (onList[json.type]) {
+      onList[json.type](json.data.msg)
     }
   }
   server.connection.onclose = (e) => {

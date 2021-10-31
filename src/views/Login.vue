@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <v-container transition="fade-transition">
     <v-text-field label="Account" v-model="account" :disabled="formSend" :rules="rules.required"></v-text-field>
     <v-text-field
       v-model="password"
@@ -14,16 +14,8 @@
     ></v-text-field>
     <v-container style="display: flex;justify-content: space-around">
       <v-btn color="primary" :loading="formSend" @click="login">Login</v-btn>
-      <v-btn color="plain" :loading="formSend">Register</v-btn>
+      <v-btn color="plain" :loading="formSend" @click="$router.push('./register')">Register</v-btn>
     </v-container>
-    <v-overlay :value="!ServerConnected">
-      <v-progress-circular
-        indeterminate
-        size="64"
-        color="primary"
-      ></v-progress-circular>
-      <span style="margin-left: 1vw">Connecting to Server...</span>
-    </v-overlay>
   </v-container>
 </template>
 
@@ -32,29 +24,20 @@ export default {
   name: 'Login',
   data () {
     return {
+      showPassword: false,
       account: '',
       password: '',
       formSend: false,
       rules: {
         required: [val => (val || '').length > 0 || 'This field is required'],
         password: [val => (val || '').length >= 8 || 'At least 8 characters']
-      },
-      showPassword: false,
-      ServerConnected: false,
-      server: Window.$WebSocket
+      }
     }
   },
   methods: {
-    init () {
-      // cnm
-      setInterval(() => {
-        this.ServerConnected = this.server.connection.readyState === 1
-      }, 500)
-    },
     login () {
       const form = { account: this.account, password: this.password }
       this.formSend = true
-      this.server.Emit('Login', form)
       this.server.On('Login', (data) => {
         this.formSend = false
         console.log(data)
@@ -64,10 +47,8 @@ export default {
           this.snackbar.Error(data.msg)
         }
       })
+      this.server.Emit('Login', form)
     }
-  },
-  mounted () {
-    this.init()
   }
 }
 </script>
