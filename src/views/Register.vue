@@ -75,7 +75,10 @@ export default {
   },
   methods: {
     reg () {
-      if (!this.formPass.every(x => x === true)) this.snackbar.Error('请先完成表单')
+      if (!this.formPass.every(x => x === true)) {
+        this.snackbar.Error('请先完成表单')
+        return
+      }
       this.form.Password = md5Encrypt(this.form.Password)
       this.confirmPassword = md5Encrypt(this.confirmPassword)
       this.formSend = true

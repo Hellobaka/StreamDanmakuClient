@@ -16,21 +16,22 @@
       </div>
       <h3>{{$route.name}}</h3>
       <v-spacer></v-spacer>
-
-      <v-btn
-        href="https://github.com/vuetifyjs/vuetify/releases/latest"
-        target="_blank"
-        text
-      >
-        <span class="mr-2">Latest Release</span>
-        <v-icon>mdi-open-in-new</v-icon>
-      </v-btn>
+      <v-avatar class="clickable" @click="globalSettingOn = true">
+        <v-icon>
+          mdi-cog
+        </v-icon>
+      </v-avatar>
+      <v-avatar class="clickable" color="indigo" @click="userCenterOn = true">
+        <v-icon dark>
+          mdi-account-circle
+        </v-icon>
+      </v-avatar>
     </v-app-bar>
 
     <v-main>
       <router-view />
     </v-main>
-     <v-overlay :value="!ServerConnected">
+    <v-overlay :value="!ServerConnected">
       <v-progress-circular
         indeterminate
         size="64"
@@ -38,17 +39,29 @@
       ></v-progress-circular>
       <span style="margin-left: 1vw">Connecting to Server...</span>
     </v-overlay>
+    <v-dialog v-model="userCenterOn">
+      <UserCenter @onDialogClose="userCenterOn=false"></UserCenter>
+    </v-dialog>
+    <v-dialog v-model="globalSettingOn">
+      <GlobalSetting @onDialogClose="globalSettingOn=false"></GlobalSetting>
+    </v-dialog>
   </v-app>
 </template>
 
 <script>
-
+import UserCenter from './components/UserCenter.vue'
+import GlobalSetting from './components/GlobalSetting.vue'
 export default {
   name: 'App',
-
+  components: {
+    UserCenter,
+    GlobalSetting
+  },
   data: () => ({
     ServerConnected: false,
-    server: Window.$WebSocket
+    server: Window.$WebSocket,
+    userCenterOn: false,
+    globalSettingOn: false
   }),
   methods: {
     init () {
@@ -63,3 +76,8 @@ export default {
   }
 }
 </script>
+<style lang="scss">
+.clickable:hover{
+  cursor: pointer;
+}
+</style>
