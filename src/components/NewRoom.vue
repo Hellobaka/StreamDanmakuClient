@@ -47,6 +47,7 @@ export default {
       password: '',
       formSend: false,
       formPass: false,
+      server: Window.$WebSocket,
       max: 10,
       rules: {
         required: [
@@ -69,6 +70,15 @@ export default {
         return
       }
       this.formSend = true
+      this.server.On('CreateRoom', (data) => {
+        this.formSend = false
+        if (data.code === 200) {
+          this.snackbar.Success(data.msg)
+        } else {
+          this.snackbar.Error(data.msg)
+        }
+      })
+      this.server.Emit('CreateRoom', { title: this.title, isPublic: this.isPublic, password: this.password, max: this.max })
     }
   }
 }

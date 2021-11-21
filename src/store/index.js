@@ -10,6 +10,11 @@ export default new Vuex.Store({
       password: '',
       rememberPassword: false,
       autoLogin: false
+    },
+    User: {
+      id: 0,
+      nickName: '',
+      createTime: ''
     }
   },
   mutations: {
@@ -18,19 +23,24 @@ export default new Vuex.Store({
     },
     setAccount (state, account) {
       state.LoginConfig.account = account
-      writeLocalConfig(state.LoginConfig, 'LoginConfig')
+      writeLocalConfig('LoginConfig', 'account', account)
     },
     setPassword (state, password) {
       state.LoginConfig.password = password
-      writeLocalConfig(state.LoginConfig, 'LoginConfig')
+      writeLocalConfig('LoginConfig', 'password', password)
     },
     setRememberPwd (state, flag) {
       state.LoginConfig.rememberPassword = flag
-      writeLocalConfig(state.LoginConfig, 'LoginConfig')
+      writeLocalConfig('LoginConfig', 'rememberPassword', flag)
     },
     setAutoLogin (state, flag) {
       state.LoginConfig.autoLogin = flag
-      writeLocalConfig(state.LoginConfig, 'LoginConfig')
+      writeLocalConfig('LoginConfig', 'autoLogin', flag)
+    },
+    setUser (state, user) {
+      state.User.id = user.id
+      state.User.nickName = user.nickName
+      state.User.createTime = user.createTime
     }
   },
   actions: {

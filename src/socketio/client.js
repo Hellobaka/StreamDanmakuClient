@@ -48,9 +48,35 @@ function On (type, callback) {
 
 server.On = On
 server.Emit = Emit
-
+server.ID = ''
+server.LastID = ''
+server.LoginFlag = false
+server.user = {}
 server.On('HeartBeat', (data) => {
   console.log(`Ping: ${Math.abs(new Date().getTime() - parseInt(data.timestamp) + 28800000)}ms`)
+})
+server.On('SocketID', (data) => {
+  console.log('getSocketID: ', data)
+  server.LastID = server.ID
+  server.ID = data
+})
+server.On('GetInfo', (data) => {
+  const form = { flag: server.LoginFlag, socketID: '' }
+  if (server.LoginFlag) {
+    form.socketID = server.LastID
+    server.user = data.data
+    window.sessionStorage.setItem('user', JSON.stringify(data.data))
+  }
+  console.log('SendInfo: ', form)
+  Emit('GetInfo', form)
+})
+server.On('GetInfoResult', (data) => {
+  console.log('InfoResult: ', data)
+  if (data.code !== 200) {
+    // dialog relogin
+    server.LastID = ''
+    server.LoginFlag = false
+  }
 })
 
 setInterval(() => {

@@ -103,6 +103,7 @@ export default {
       tipNewShow: false,
       filterDialog: false,
       newRoomDialog: false,
+      server: Window.$WebSocket,
       roomList: [
         {
           id: 1,
@@ -136,7 +137,19 @@ export default {
       this.filterDialog = true
     },
     signalClickHandle () {}
+  },
+  mounted () {
+    this.user = this.server.user
+    if (!this.user.Id) {
+      const sessionUser = window.sessionStorage.getItem('user')
+      if (!sessionUser) {
+        window.location.href = './'
+      }
+      this.user = JSON.parse(sessionUser)
+    }
+    console.log(this.user)
   }
+
 }
 </script>
 

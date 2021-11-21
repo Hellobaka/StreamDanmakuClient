@@ -75,6 +75,7 @@ export default {
           if (this.rememberPassword) {
             this.$store.commit('setPassword', this.password)
           }
+          window.sessionStorage.setItem('user', JSON.stringify(data.data))
           this.$router.replace({ path: './roomList' })
         } else {
           this.snackbar.Error(data.msg)

@@ -12,7 +12,7 @@ const SALT = 'I AM FW'
 const isDev = !app.isPackaged
 
 const appRoot = isDev ? path.resolve(__dirname, '..', '..') : path.resolve(app.getAppPath(), '..', '..')
-const userDataPath = path.resolve(appRoot, 'userData')
+const userDataPath = path.resolve('E:\\Code\\webrtc-client\\dist_electron', 'userData')
 const userConfigPath = path.resolve(userDataPath, 'Config.json')
 const userPath = app.getPath('userData')
 fs.ensureDir(userDataPath)
@@ -21,10 +21,10 @@ export function md5Encrypt (msg) {
   msg += SALT
   return md5(msg)
 }
-export function writeLocalConfig (config, section) {
+export function writeLocalConfig (section, key, value) {
   if (fs.existsSync(userConfigPath)) {
     const mainConfig = fs.readJSONSync(userConfigPath)
-    mainConfig[section] = config
+    mainConfig[section][key] = value
     fs.writeJSONSync(userConfigPath, mainConfig)
   } else {
     fs.writeJSONSync(userConfigPath, {})
