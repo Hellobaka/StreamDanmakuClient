@@ -50,7 +50,7 @@
             </v-list-item-content>
             <v-list-item-action><v-icon>mdi-menu-right</v-icon></v-list-item-action>
           </v-list-item>
-          <v-list-item @click="clickHandle">
+          <v-list-item @click="logout">
             <v-list-item-content>
               <v-list-item-title>登出</v-list-item-title>
               <v-list-item-subtitle>将账号登出</v-list-item-subtitle>
@@ -68,6 +68,7 @@
 </template>
 
 <script>
+const { Confirm } = require('../utils/dialog')
 export default {
   name: 'UserCenter',
   data () {
@@ -77,9 +78,12 @@ export default {
     }
   },
   methods: {
-    logout () {
-      this.$store.commit('setAutoLogin', false)
-      window.location.href = './'
+    async logout () {
+      const res = await Confirm('确认要注销吗？', '注销提醒')
+      if (res) {
+        this.$store.commit('setAutoLogin', false)
+        window.location.href = './'
+      }
     },
     clickHandle () {}
   },
