@@ -25,7 +25,6 @@
 </template>
 
 <script>
-const { loadLocalConfig } = require('../utils/tools')
 export default {
   name: 'Login',
   data () {
@@ -76,6 +75,7 @@ export default {
             this.$store.commit('setPassword', this.password)
           }
           window.sessionStorage.setItem('user', JSON.stringify(data.data))
+          window.sessionStorage.setItem('LoginFlag', 'true')
           this.$router.replace({ path: './roomList' })
         } else {
           this.snackbar.Error(data.msg)
@@ -104,7 +104,6 @@ export default {
     }
   },
   mounted () {
-    loadLocalConfig()
     this.account = this.$store.state.LoginConfig.account
     this.password = this.$store.state.LoginConfig.password
     this.rememberPassword = this.$store.state.LoginConfig.rememberPassword

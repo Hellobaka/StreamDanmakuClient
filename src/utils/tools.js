@@ -24,19 +24,17 @@ export function md5Encrypt (msg) {
 export function writeLocalConfig (section, key, value) {
   if (fs.existsSync(userConfigPath)) {
     const mainConfig = fs.readJSONSync(userConfigPath)
+    if (!mainConfig[section]) mainConfig[section] = {}
     mainConfig[section][key] = value
     fs.writeJSONSync(userConfigPath, mainConfig)
   } else {
     fs.writeJSONSync(userConfigPath, {})
   }
 }
-export function loadLocalConfig () {
+export function loadLocalConfig (section) {
   if (fs.existsSync(userConfigPath)) {
     const mainConfig = fs.readJSONSync(userConfigPath)
-    for (const config in mainConfig) {
-      store.commit('loadConfig', { section: config, payload: mainConfig[config] })
-    }
-    console.log('Load Local Config Success.')
+    return mainConfig[section]
   } else {
     fs.writeJSONSync(userConfigPath, {})
   }

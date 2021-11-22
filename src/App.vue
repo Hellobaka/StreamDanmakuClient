@@ -37,7 +37,7 @@
         size="64"
         color="primary"
       ></v-progress-circular>
-      <span style="margin-left: 1vw">Connecting to Server...</span>
+      <span style="margin-left: 1vw">与服务器建立连接中...</span>
     </v-overlay>
     <v-dialog v-model="userCenterOn">
       <UserCenter @onDialogClose="userCenterOn=false"></UserCenter>
@@ -51,6 +51,7 @@
 <script>
 import UserCenter from './components/UserCenter.vue'
 import GlobalSetting from './components/GlobalSetting.vue'
+const { loadLocalConfig } = require('./utils/tools')
 export default {
   name: 'App',
   components: {
@@ -58,6 +59,7 @@ export default {
     GlobalSetting
   },
   data: () => ({
+    globalThis: global,
     ServerConnected: false,
     server: Window.$WebSocket,
     userCenterOn: false,
@@ -72,6 +74,11 @@ export default {
     }
   },
   mounted () {
+    global.Application = {}
+    global.Application.Config = loadLocalConfig('Config')
+    this.$vuetify.theme.themes.light.primary = global.Application.Config.themeColor
+    this.$store.commit('loadConfig', { section: 'LoginConfig', payload: loadLocalConfig('LoginConfig') })
+    console.log('Load Local Config Success.')
     this.init()
   }
 }
