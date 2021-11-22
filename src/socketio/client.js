@@ -1,6 +1,8 @@
 const url = 'ws://127.0.0.1:6235/main'
 let reconnectCount = 0
 
+const { Info } = require('../utils/dialog')
+
 Window.$WebSocket = { connection: new WebSocket(url) }
 const server = Window.$WebSocket
 const onList = []
@@ -48,34 +50,35 @@ function On (type, callback) {
 
 server.On = On
 server.Emit = Emit
-server.ID = ''
-server.LastID = ''
-server.LoginFlag = false
 server.user = {}
 server.On('HeartBeat', (data) => {
   console.log(`Ping: ${Math.abs(new Date().getTime() - parseInt(data.timestamp) + 28800000)}ms`)
 })
 server.On('SocketID', (data) => {
   console.log('getSocketID: ', data)
-  server.LastID = server.ID
-  server.ID = data
+  window.sessionStorage.setItem('LastID', window.sessionStorage.getItem('NowID'))
+  window.sessionStorage.setItem('NowID', data)
 })
 server.On('GetInfo', (data) => {
+  server.LoginFlag = window.sessionStorage.getItem('LoginFlag') === 'true'
   const form = { flag: server.LoginFlag, socketID: '' }
   if (server.LoginFlag) {
-    form.socketID = server.LastID
-    server.user = data.data
-    window.sessionStorage.setItem('user', JSON.stringify(data.data))
+    form.socketID = window.sessionStorage.getItem('LastID')
   }
   console.log('SendInfo: ', form)
   Emit('GetInfo', form)
 })
-server.On('GetInfoResult', (data) => {
+server.On('GetInfoResult', async (data) => {
   console.log('InfoResult: ', data)
   if (data.code !== 200) {
-    // dialog relogin
-    server.LastID = ''
-    server.LoginFlag = false
+    window.sessionStorage.setItem('LastID', '')
+    window.sessionStorage.setItem('NowID', '')
+    window.sessionStorage.setItem('LoginFlag', 'false')
+    await Info('登录失效，请重新登录')
+    window.location.href = './'
+  } else {
+    server.user = data.data
+    window.sessionStorage.setItem('user', JSON.stringify(data.data))
   }
 })
 
