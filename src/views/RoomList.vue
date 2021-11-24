@@ -38,7 +38,7 @@
       <template v-slot:activator>
         <v-btn
           v-model="fab"
-          color="blue darken-2"
+          color="primary"
           dark
           fab
         >
@@ -92,6 +92,8 @@
 
 <script>
 import NewRoom from '../components/NewRoom.vue'
+import { Info } from '../utils/dialog'
+import { readSessionStorage } from '../utils/tools'
 export default {
   components: {
     NewRoom
@@ -139,17 +141,12 @@ export default {
     signalClickHandle () {}
   },
   mounted () {
-    this.user = this.server.user
-    if (!this.user.Id) {
-      const sessionUser = window.sessionStorage.getItem('user')
-      if (!sessionUser) {
-        window.location.href = './'
-      }
-      this.user = JSON.parse(sessionUser)
+    this.user = readSessionStorage('user')
+    if (!this.user) {
+      Info('登录失效，点击重新登录').then(() => { window.location.href = './' })
     }
     console.log(this.user)
   }
-
 }
 </script>
 

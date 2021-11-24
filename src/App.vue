@@ -21,7 +21,7 @@
           mdi-cog
         </v-icon>
       </v-avatar>
-      <v-avatar class="clickable" color="indigo" @click="userCenterOn = true">
+      <v-avatar class="clickable" color="indigo" @click="OpenUserCenter">
         <v-icon dark>
           mdi-account-circle
         </v-icon>
@@ -39,11 +39,11 @@
       ></v-progress-circular>
       <span style="margin-left: 1vw">与服务器建立连接中...</span>
     </v-overlay>
-    <v-dialog v-model="userCenterOn">
-      <UserCenter @onDialogClose="userCenterOn=false"></UserCenter>
+    <v-dialog v-model="userCenterOn" @click:outside="userCenterOn=false" persistent>
+      <UserCenter @onDialogClose="userCenterOn=false" v-if="userCenterOn"></UserCenter>
     </v-dialog>
     <v-dialog v-model="globalSettingOn">
-      <GlobalSetting @onDialogClose="globalSettingOn=false"></GlobalSetting>
+      <GlobalSetting @onDialogClose="globalSettingOn=false" v-if="globalSettingOn"></GlobalSetting>
     </v-dialog>
   </v-app>
 </template>
@@ -51,7 +51,7 @@
 <script>
 import UserCenter from './components/UserCenter.vue'
 import GlobalSetting from './components/GlobalSetting.vue'
-const { loadLocalConfig } = require('./utils/tools')
+const { loadLocalConfig, readSessionStorage } = require('./utils/tools')
 export default {
   name: 'App',
   components: {
@@ -71,13 +71,17 @@ export default {
       setInterval(() => {
         this.ServerConnected = this.server.connection.readyState === 1
       }, 500)
+    },
+    OpenUserCenter () {
+      if (readSessionStorage('LoginFlag')) this.userCenterOn = true
     }
   },
   mounted () {
     global.Application = {}
     global.Application.Config = loadLocalConfig('Config')
-    this.$vuetify.theme.themes.light.primary = global.Application.Config.themeColor
-    this.$store.commit('loadConfig', { section: 'LoginConfig', payload: loadLocalConfig('LoginConfig') })
+    if (global.Application.Config && global.Application.Config.themeColor) {
+      this.$vuetify.theme.themes.light.primary = global.Application.Config.themeColor
+    }
     console.log('Load Local Config Success.')
     this.init()
   }

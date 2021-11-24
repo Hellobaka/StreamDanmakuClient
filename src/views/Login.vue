@@ -1,8 +1,8 @@
 <template>
   <v-container transition="fade-transition">
-    <v-text-field label="Account" v-model="account" :disabled="formSend" :rules="rules.account"></v-text-field>
+    <v-text-field label="Account" v-model="loginConfig.account" :disabled="formSend" :rules="rules.account"></v-text-field>
     <v-text-field
-      v-model="password"
+      v-model="loginConfig.password"
       :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
       :type="showPassword ? 'text' : 'password'"
       name="input-10-1"
@@ -14,8 +14,8 @@
       @keyup="checkEnterKey($event)"
     ></v-text-field>
     <div style="display: flex;">
-      <v-switch v-model="rememberPassword" label="RememberPassword" style="margin-right: 2vw;" @change="loginConfigChange('RememberPassword')"></v-switch>
-      <v-switch v-model="autoLogin" label="AutoLogin" @change="loginConfigChange('AutoLogin')"></v-switch>
+      <v-switch v-model="loginConfig.rememberPassword" label="RememberPassword" style="margin-right: 2vw;" @change="loginConfigChange('RememberPassword')"></v-switch>
+      <v-switch v-model="loginConfig.autoLogin" label="AutoLogin" @change="loginConfigChange('AutoLogin')"></v-switch>
     </div>
     <v-container style="display: flex;justify-content: space-around">
       <v-btn color="primary" :loading="formSend" @click="login">Login</v-btn>
@@ -25,15 +25,18 @@
 </template>
 
 <script>
+import { loadLocalConfig, writeLocalConfig, writeSessionStorage } from '../utils/tools'
 export default {
   name: 'Login',
   data () {
     return {
       showPassword: false,
-      rememberPassword: false,
-      autoLogin: false,
-      account: '',
-      password: '',
+      loginConfig: {
+        rememberPassword: false,
+        autoLogin: false,
+        account: '',
+        password: ''
+      },
       formSend: false,
       formPass: [false, false],
       rules: {
@@ -59,41 +62,48 @@ export default {
   },
   methods: {
     login () {
-      if (!this.formPass.every(x => x) && !(this.account.length > 3 && this.password.length >= 8)) {
+      if (!this.formPass.every(x => x) && !(this.loginConfig.account.length > 3 && this.loginConfig.password.length >= 8)) {
         this.snackbar.Error('Complete the form first')
         return
       }
-      const form = { account: this.account, password: this.password }
+      const form = { account: this.loginConfig.account, password: this.loginConfig.password }
       this.formSend = true
-      this.$store.commit('setAccount', this.account)
+      writeLocalConfig('LoginConfig', 'account', this.loginConfig.account)
       this.server.On('Login', (data) => {
-        this.formSend = false
-        console.log(data)
         if (data.code === 200) {
-          this.snackbar.Success(data.msg)
-          if (this.rememberPassword) {
-            this.$store.commit('setPassword', this.password)
+          writeLocalConfig('JWT', 'token', data.data)
+          this.server.Emit('GetInfo', { loginFlag: true, jwt: data.data })
+        } else {
+          this.snackbar.Error(data.msg)
+          this.formSend = false
+        }
+      })
+      this.server.TempGetInfoCallback = (data) => {
+        this.formSend = false
+        if (data.code === 200) {
+          this.snackbar.Success('登录成功')
+          if (this.loginConfig.rememberPassword) {
+            writeLocalConfig('LoginConfig', 'password', this.loginConfig.password)
           }
-          window.sessionStorage.setItem('user', JSON.stringify(data.data))
-          window.sessionStorage.setItem('LoginFlag', 'true')
+          writeSessionStorage('LoginFlag', true)
           this.$router.replace({ path: './roomList' })
         } else {
           this.snackbar.Error(data.msg)
         }
-      })
+      }
       this.server.Emit('Login', form)
     },
     loginConfigChange (config) {
       switch (config) {
         case 'RememberPassword':
-          this.$store.commit('setRememberPwd', this.rememberPassword)
+          writeLocalConfig('LoginConfig', 'rememberPassword', this.loginConfig.rememberPassword)
           break
         case 'AutoLogin':
-          if (this.autoLogin) {
-            this.rememberPassword = true
-            this.$store.commit('setRememberPwd', this.rememberPassword)
+          if (this.loginConfig.autoLogin) {
+            this.loginConfig.rememberPassword = true
+            writeLocalConfig('LoginConfig', 'rememberPassword', this.loginConfig.rememberPassword)
           }
-          this.$store.commit('setAutoLogin', this.autoLogin)
+          writeLocalConfig('LoginConfig', 'autoLogin', this.loginConfig.autoLogin)
           break
       }
     },
@@ -104,11 +114,8 @@ export default {
     }
   },
   mounted () {
-    this.account = this.$store.state.LoginConfig.account
-    this.password = this.$store.state.LoginConfig.password
-    this.rememberPassword = this.$store.state.LoginConfig.rememberPassword
-    this.autoLogin = this.$store.state.LoginConfig.autoLogin
-    if (this.autoLogin) {
+    this.loginConfig = loadLocalConfig('LoginConfig')
+    if (this.loginConfig.autoLogin) {
       this.login()
     }
   }
