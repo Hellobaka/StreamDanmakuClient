@@ -2,6 +2,7 @@ const url = 'ws://127.0.0.1:6235/main'
 let reconnectCount = 0
 
 const { Info } = require('../utils/dialog')
+const { readSessionStorage, writeSessionStorage, loadLocalConfig } = require('../utils/tools')
 
 Window.$WebSocket = { connection: new WebSocket(url) }
 const server = Window.$WebSocket
@@ -56,31 +57,34 @@ server.On('HeartBeat', (data) => {
 })
 server.On('SocketID', (data) => {
   console.log('getSocketID: ', data)
-  window.sessionStorage.setItem('LastID', window.sessionStorage.getItem('NowID'))
-  window.sessionStorage.setItem('NowID', data)
+  writeSessionStorage('SocketID', data)
 })
 server.On('GetInfo', (data) => {
-  server.LoginFlag = window.sessionStorage.getItem('LoginFlag') === 'true'
-  const form = { flag: server.LoginFlag, socketID: '' }
-  if (server.LoginFlag) {
-    form.socketID = window.sessionStorage.getItem('LastID')
+  writeSessionStorage('user', {})
+  // writeSessionStorage('LoginFlag', false)
+  if (readSessionStorage('LoginFlag')) {
+    Emit('GetInfo', { loginFlag: true, jwt: loadLocalConfig('JWT').token })
+  } else {
+    Emit('GetInfo', { loginFlag: false })
   }
-  console.log('SendInfo: ', form)
-  Emit('GetInfo', form)
 })
 server.On('GetInfoResult', async (data) => {
   console.log('InfoResult: ', data)
   if (data.code !== 200) {
-    window.sessionStorage.setItem('LastID', '')
-    window.sessionStorage.setItem('NowID', '')
-    window.sessionStorage.setItem('LoginFlag', 'false')
-    await Info('登录失效，请重新登录')
+    writeSessionStorage('user', {})
+    writeSessionStorage('LoginFlag', false)
+    await Info(data.msg)
+    server.TempGetInfoCallback(data)
+    server.TempGetInfoCallback = (data) => {}
     window.location.href = './'
   } else {
-    server.user = data.data
-    window.sessionStorage.setItem('user', JSON.stringify(data.data))
+    writeSessionStorage('user', data.data)
+    writeSessionStorage('LoginFlag', true)
+    server.TempGetInfoCallback(data)
+    server.TempGetInfoCallback = (data) => {}
   }
 })
+server.TempGetInfoCallback = (data) => {}
 
 setInterval(() => {
   if (server.connection.readyState === 1) {

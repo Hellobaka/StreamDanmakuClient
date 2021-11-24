@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
+import { readSessionStorage } from '../utils/tools'
 
 Vue.use(VueRouter)
 
@@ -26,6 +27,11 @@ const routes = [
 
 const router = new VueRouter({
   routes
+})
+
+router.beforeEach((to, from, next) => {
+  if (to.name !== 'Login' && !readSessionStorage('LoginFlag')) next({ name: 'Login' })
+  else next()
 })
 
 export default router
