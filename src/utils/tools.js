@@ -33,9 +33,56 @@ export function writeLocalConfig (section, key, value) {
 }
 export function loadLocalConfig (section) {
   if (fs.existsSync(userConfigPath)) {
-    const mainConfig = fs.readJSONSync(userConfigPath)
-    return mainConfig[section]
+    try {
+      const mainConfig = fs.readJSONSync(userConfigPath)
+      return mainConfig[section]
+    } catch {
+      const newConfig = getTemplateConfig()
+      fs.writeJSONSync(userConfigPath, newConfig)
+      return newConfig[section]
+    }
   } else {
-    fs.writeJSONSync(userConfigPath, {})
+    const newConfig = getTemplateConfig()
+    fs.writeJSONSync(userConfigPath, newConfig)
+    return newConfig[section]
   }
+}
+export function writeSessionStorage (key, object) {
+  window.sessionStorage.setItem(key, JSON.stringify(object))
+}
+export function readSessionStorage (key) {
+  return JSON.parse(window.sessionStorage.getItem(key))
+}
+export function getTemplateConfig () {
+  const Config = {
+    LoginConfig: {
+      rememberPassword: false,
+      autoLogin: false,
+      account: '',
+      password: ''
+    },
+    Config: {
+      themeColor: '',
+      bitrate_Stream: 9000,
+      framerate_Stream: 60,
+      bitrate_Client: 9000,
+      framerate_Client: 60,
+      audio_Input: '',
+      audio_Output: '',
+      input: '',
+      inputDeviceID: '',
+      outputDeviceID: '',
+      danmukuDefault: true,
+      danmukuRemember: true,
+      p2pAssist: true,
+      stunServer: '',
+      turnServer: ''
+    }
+  }
+  return Config
+}
+
+export function rulesVerify (result) {
+  if (typeof result === 'string') return false
+  return result
 }

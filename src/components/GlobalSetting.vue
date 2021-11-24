@@ -1,6 +1,12 @@
 <template>
   <v-card>
-    <v-card-title>全局设置</v-card-title>
+    <v-card-title>
+      全局设置
+      <v-spacer></v-spacer>
+      <v-btn icon @click="closeDialog">
+        <v-icon>mdi-window-close</v-icon>
+      </v-btn>
+    </v-card-title>
     <v-card-text>
       <v-container>
         <v-list subheader>
@@ -234,6 +240,9 @@ export default {
       this.$emit('onDialogClose', true)
       this.stopInput()
     }
+  },
+  beforeDestroy () {
+    this.stopInput()
   },
   mounted () {
     const config = loadLocalConfig('Config')
