@@ -48,10 +48,10 @@ export function loadLocalConfig (section) {
   }
 }
 export function writeSessionStorage (key, object) {
-  window.sessionStorage.setItem(key, JSON.stringify(object))
+  app.global.Application[key] = object
 }
 export function readSessionStorage (key) {
-  return JSON.parse(window.sessionStorage.getItem(key))
+  return app.global.Application[key]
 }
 export function getTemplateConfig () {
   const Config = {

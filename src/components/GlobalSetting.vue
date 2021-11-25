@@ -166,7 +166,8 @@
 </template>
 
 <script>
-const { writeLocalConfig, loadLocalConfig } = require('../utils/tools')
+import { app } from '@electron/remote'
+const { writeLocalConfig, loadLocalConfig, writeSessionStorage } = require('../utils/tools')
 export default {
   name: 'GlobalSetting',
   data () {
@@ -232,7 +233,7 @@ export default {
       for (const item in this.Config) {
         writeLocalConfig('Config', item, this.Config[item])
       }
-      global.Application.Config = this.Config
+      app.global.Application.Config = this.Config
       this.$vuetify.theme.themes.light.primary = this.Config.themeColor
       this.closeDialog()
     },
@@ -247,7 +248,7 @@ export default {
   mounted () {
     const config = loadLocalConfig('Config')
     if (config) this.Config = config
-    window.sessionStorage.setItem('Config', JSON.stringify(this.Config))
+    writeSessionStorage('Config', config)
     navigator.mediaDevices.enumerateDevices()
       .then(items => {
         items.filter(x => x.kind === 'audiooutput').forEach(x => {
