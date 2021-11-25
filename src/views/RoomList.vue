@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div data-app="true">
     <v-list subheader two-line>
       <v-subheader inset>当前共有公开房间{{ roomList.length }}个</v-subheader>
       <v-list-item
@@ -27,6 +27,9 @@
         </v-list-item-action>
       </v-list-item>
     </v-list>
+    <v-dialog max-width="500" persistent v-model="passwordDialog">
+      <RoomPassword @onDialogClose="closePasswordDialog" v-if="passwordDialog"></RoomPassword>
+    </v-dialog>
     <v-speed-dial
       v-model="fab"
       bottom
@@ -51,7 +54,7 @@
         </v-btn>
       </template>
       <v-tooltip top v-model="tipFilterShow" attach="#tipFilter">
-        Filter
+        过滤
       </v-tooltip>
       <v-btn
         id="tipFilter"
@@ -66,7 +69,7 @@
         <v-icon>mdi-filter-variant</v-icon>
       </v-btn>
       <v-tooltip top v-model="tipNewShow" attach="#tipNew">
-        New Room
+        新建
       </v-tooltip>
       <v-btn
         id="tipNew"
@@ -82,21 +85,32 @@
       </v-btn>
     </v-speed-dial>
     <v-dialog v-model="newRoomDialog">
-      <NewRoom @onDialogClose="newRoomDialog=false"></NewRoom>
+      <NewRoom @onDialogClose="newRoomDialog=false" v-if="newRoomDialog"></NewRoom>
     </v-dialog>
     <v-dialog v-model="filterDialog">
 
     </v-dialog>
+    <v-overlay :value="formSend">
+      <v-progress-circular
+        indeterminate
+        size="64"
+        color="primary"
+      ></v-progress-circular>
+      <span style="margin-left: 1vw">向服务器请求房间数据...</span>
+    </v-overlay>
   </div>
 </template>
 
 <script>
 import NewRoom from '../components/NewRoom.vue'
+import RoomPassword from '../components/RoomPassword.vue'
 import { Info } from '../utils/dialog'
 import { readSessionStorage } from '../utils/tools'
+import { createChildWindow } from '../utils/windowsHelper'
 export default {
   components: {
-    NewRoom
+    NewRoom,
+    RoomPassword
   },
   data () {
     return {
@@ -105,6 +119,10 @@ export default {
       tipNewShow: false,
       filterDialog: false,
       newRoomDialog: false,
+      passwordDialog: false,
+      selectRoomID: 0,
+      selectRoomPassword: '',
+      formSend: false,
       server: Window.$WebSocket,
       roomList: [
         {
@@ -130,7 +148,38 @@ export default {
   },
   methods: {
     roomClick (id) {
-      console.log('enter room ', id)
+      this.selectRoomID = -1
+      this.selectRoomPassword = ''
+      const room = this.roomList.find(x => x.id === id)
+      if (room) {
+        if (room.passwordNeeded) {
+          this.selectRoomID = id
+          this.passwordDialog = true
+          return
+        }
+        if (room.max !== 51 && room.personCount >= room.max) {
+          this.snackbar.Error('房间已满')
+          return
+        }
+        this.enterRoom(id)
+      } else {
+        this.snackbar.Error('房间不存在')
+      }
+    },
+    enterRoom (id) {
+      this.formSend = true
+      this.server.On('EnterRoom', (data) => {
+        this.formSend = false
+        if (data.code === 200) {
+          createChildWindow('streamer/client/')
+        } else {
+          this.snackbar.Error(data.msg)
+        }
+      })
+      this.server.Emit('EnterRoom', { id: this.selectRoomID, password: this.selectRoomPassword })
+      this.formSend = false
+      // this.$router.push('streamer/client')
+      createChildWindow('streamer/client/')
     },
     callNewRoom () {
       this.newRoomDialog = true
@@ -138,11 +187,18 @@ export default {
     callFilter () {
       this.filterDialog = true
     },
+    closePasswordDialog (data) {
+      this.passwordDialog = false
+      if (data && this.selectRoomID) {
+        this.selectRoomPassword = data
+        this.enterRoom(this.selectRoomID)
+      }
+    },
     signalClickHandle () {}
   },
   mounted () {
     this.user = readSessionStorage('user')
-    if (!this.user) {
+    if (!this.user || !readSessionStorage('LoginFlag')) {
       Info('登录失效，点击重新登录').then(() => { window.location.href = './' })
     }
     console.log(this.user)

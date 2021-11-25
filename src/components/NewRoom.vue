@@ -73,7 +73,7 @@ export default {
       this.server.On('CreateRoom', (data) => {
         this.formSend = false
         if (data.code === 200) {
-          this.snackbar.Success(data.msg)
+          this.snackbar.Success('房间创建成功，进入推流界面……')
         } else {
           this.snackbar.Error(data.msg)
         }
