@@ -1,6 +1,7 @@
 'use strict'
 
-import { app, protocol, BrowserWindow } from 'electron'
+// eslint-disable-next-line no-unused-vars
+import { app, protocol, BrowserWindow, Menu } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 const isDevelopment = process.env.NODE_ENV !== 'production'
@@ -11,6 +12,7 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 async function createWindow () {
+  // Menu.setApplicationMenu(null)
   // Create the browser window.
   const win = new BrowserWindow({
     width: 1300,
@@ -26,7 +28,13 @@ async function createWindow () {
       enableRemoteModule: process.env.ELECTRON_NODE_INTEGRATION
     }
   })
+  app.global = {}
+  app.global.Application = {}
 
+  app.global.Application.WindowsMap = new Map()
+  app.global.Application.WindowsMap.set(win.id, win)
+  app.global.Application.MainWindowID = win.id
+  app.global.Application.BASE_URL = process.env.WEBPACK_DEV_SERVER_URL || 'app://./index.html'
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
     await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
