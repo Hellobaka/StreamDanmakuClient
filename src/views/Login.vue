@@ -1,25 +1,25 @@
 <template>
   <v-container transition="fade-transition">
-    <v-text-field label="Account" v-model="loginConfig.account" :disabled="formSend" :rules="rules.account"></v-text-field>
+    <v-text-field label="账号" v-model="loginConfig.account" :disabled="formSend" :rules="rules.account"></v-text-field>
     <v-text-field
       v-model="loginConfig.password"
       :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
       :type="showPassword ? 'text' : 'password'"
       name="input-10-1"
       :rules="rules.password"
-      label="Password"
-      hint="At least 8 characters"
+      label="密码"
+      hint="至少8个字符"
       @click:append="showPassword = !showPassword"
       :disabled="formSend"
       @keyup="checkEnterKey($event)"
     ></v-text-field>
     <div style="display: flex;">
-      <v-switch v-model="loginConfig.rememberPassword" label="RememberPassword" style="margin-right: 2vw;" @change="loginConfigChange('RememberPassword')"></v-switch>
-      <v-switch v-model="loginConfig.autoLogin" label="AutoLogin" @change="loginConfigChange('AutoLogin')"></v-switch>
+      <v-switch v-model="loginConfig.rememberPassword" label="记住密码" style="margin-right: 2vw;" @change="loginConfigChange('RememberPassword')"></v-switch>
+      <v-switch v-model="loginConfig.autoLogin" label="自动登录" @change="loginConfigChange('AutoLogin')"></v-switch>
     </div>
     <v-container style="display: flex;justify-content: space-around">
-      <v-btn color="primary" :loading="formSend" @click="login">Login</v-btn>
-      <v-btn color="plain" :loading="formSend" @click="$router.push('./register')">Register</v-btn>
+      <v-btn color="primary" :loading="formSend" @click="login">登录</v-btn>
+      <v-btn color="plain" :loading="formSend" @click="$router.push('./register')">注册</v-btn>
     </v-container>
   </v-container>
 </template>
@@ -46,7 +46,7 @@ export default {
             return true
           }
           this.formPass[0] = false
-          return 'At least 3 characters'
+          return '至少3个字符'
         }],
         password: [val => {
           if ((val || '').length >= 8) {
@@ -54,7 +54,7 @@ export default {
             return true
           }
           this.formPass[1] = false
-          return 'At least 8 characters'
+          return '至少8个字符'
         }]
       },
       server: Window.$WebSocket
@@ -63,7 +63,7 @@ export default {
   methods: {
     login () {
       if (!this.formPass.every(x => x) && !(this.loginConfig.account.length > 3 && this.loginConfig.password.length >= 8)) {
-        this.snackbar.Error('Complete the form first')
+        this.snackbar.Error('请先完成表单')
         return
       }
       const form = { account: this.loginConfig.account, password: this.loginConfig.password }
