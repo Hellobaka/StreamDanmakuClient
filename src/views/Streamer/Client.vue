@@ -86,14 +86,13 @@
 </template>
 
 <script>
-import { loadLocalConfig, writeLocalConfig } from '../../utils/tools'
+import { readSessionStorage, writeLocalConfig, writeSessionStorage } from '../../utils/tools'
 import moment from 'moment'
-const { app } = require('@electron/remote')
 
 export default {
   data () {
     return {
-      server: Window.$webSocket,
+      server: Window.$WebSocket,
       screenFullFlag: false,
       preVol: 100,
       vols: 100,
@@ -111,7 +110,7 @@ export default {
       menuY: 0,
       logs: [],
       remoteVideo: new MediaStream(),
-      RTCConnection: null,
+      RTCConnection: new RTCPeerConnection(),
       RTCConfigure: {
         iceServers:
         [
@@ -148,7 +147,7 @@ export default {
       return this.playStatus ? 'mdi-origin' : 'mdi-steam'
     },
     config: function () {
-      return app.global.Application.Config || loadLocalConfig('Config')
+      return readSessionStorage('Config')
     }
   },
   mounted () {
@@ -175,6 +174,9 @@ export default {
     this.writeLog('已新建RTC连接, 等待服务器响应')
     this.server.On('RoomEntered', this.handleRoomEnter)
     this.server.Emit('RoomEntered', { id: 0 })
+  },
+  beforeCreate () {
+    writeSessionStorage('StreamFlag', true)
   },
   methods: {
     callScreenFull () {
@@ -248,13 +250,51 @@ export default {
       if (data.code !== 200) {
         this.snackbar.Error(data.msg)
       } else {
-        this.server.On('CreateOffer', data => {
-        })
-        this.server.Emit('CreateOffer', await this.createOffer())
+        this.writeLog('初始化RTC连接...')
+        this.RTCConnection.addTransceiver('audio', { direction: 'recvonly' })
+        this.RTCConnection.addTransceiver('video', { direction: 'recvonly' })
+        this.RTCConnection.onicecandidate = (e) => {
+          this.writeLog('收到远程方令牌')
+          if (e.candidate) {
+            this.server.Emit('candidate', { candidate: e.candidate })
+          }
+        }
+
+        this.RTCConnection.ontrack = (e) => {
+          this.writeLog('接收到音视频轨道')
+          this.remoteVideo.addTrack(e.track)
+        }
+        this.server.On('Offer', this.OnOffer)
+        this.server.On('Candidate', this.OnCandidate)
+        this.writeLog('向远程方发送连接请求...')
+        this.server.Emit('Offer', { offer: 'plz' })
       }
     },
-    async createOffer () {}
-
+    async OnOffer (data) {
+      if (data.code === 200) {
+        this.writeLog('收到远程方连接响应')
+        await this.RTCConnection.setRemoteDescription(data.data.offer)
+        const answer = await this.RTCConnection.createAnswer()
+        await this.RTCConnection.setLocalDescription(answer)
+        this.writeLog('向远程方发送连接响应')
+        this.server.Emit('Answer', { answer })
+      } else {
+        this.snackbar.Error(data.msg)
+      }
+    },
+    async OnCandidate (data) {
+      if (data.code === 200) {
+        await this.RTCConnection.addIceCandidate(new RTCIceCandidate(data.data.candidate))
+      } else {
+        this.snackbar.Error(data.msg)
+      }
+    }
+  },
+  beforeDestroy () {
+    writeSessionStorage('StreamFlag', false)
+    this.RTCConnection.close()
+    this.RTCConnection.onicecandidate = null
+    this.RTCConnection.ontrack = null
   }
 }
 </script>

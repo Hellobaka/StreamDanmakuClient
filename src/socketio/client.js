@@ -62,7 +62,9 @@ server.On('SocketID', (data) => {
 server.On('GetInfo', (data) => {
   writeSessionStorage('user', {})
   // writeSessionStorage('LoginFlag', false)
-  if (readSessionStorage('LoginFlag')) {
+  if (readSessionStorage('StreamFlag')) {
+    Emit('GetInfo', { loginFlag: true, jwt: loadLocalConfig('JWT').token, streamFlag: true })
+  } else if (readSessionStorage('LoginFlag')) {
     Emit('GetInfo', { loginFlag: true, jwt: loadLocalConfig('JWT').token })
   } else {
     Emit('GetInfo', { loginFlag: false })
