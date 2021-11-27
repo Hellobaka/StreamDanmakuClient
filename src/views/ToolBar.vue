@@ -51,8 +51,7 @@
 <script>
 import UserCenter from '../components/UserCenter.vue'
 import GlobalSetting from '../components/GlobalSetting.vue'
-const { loadLocalConfig, readSessionStorage } = require('../utils/tools')
-const { app } = require('@electron/remote')
+const { loadLocalConfig, readSessionStorage, writeSessionStorage } = require('../utils/tools')
 export default {
   name: 'ToolBar',
   components: {
@@ -64,7 +63,8 @@ export default {
     ServerConnected: false,
     server: Window.$WebSocket,
     userCenterOn: false,
-    globalSettingOn: false
+    globalSettingOn: false,
+    config: null
   }),
   methods: {
     init () {
@@ -78,10 +78,10 @@ export default {
     }
   },
   mounted () {
-    console.log(app.global.Application)
-    app.global.Application.Config = loadLocalConfig('Config')
-    if (app.global.Application.Config && app.global.Application.Config.themeColor) {
-      this.$vuetify.theme.themes.light.primary = app.global.Application.Config.themeColor
+    this.config = loadLocalConfig('Config')
+    writeSessionStorage('Config', this.config)
+    if (this.config && this.config.themeColor) {
+      this.$vuetify.theme.themes.light.primary = this.config.themeColor
     }
     console.log('Load Local Config Success.')
     this.init()

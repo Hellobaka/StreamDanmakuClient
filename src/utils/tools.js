@@ -10,7 +10,7 @@ const md5 = require('js-md5')
 const SALT = 'I AM FW'
 
 const isDev = !app.isPackaged
-
+import Cookies from 'js-cookie'
 const appRoot = isDev ? path.resolve(__dirname, '..', '..') : path.resolve(app.getAppPath(), '..', '..')
 const userDataPath = path.resolve('E:\\Code\\webrtc-client\\dist_electron', 'userData')
 const userConfigPath = path.resolve(userDataPath, 'Config.json')
@@ -48,10 +48,12 @@ export function loadLocalConfig (section) {
   }
 }
 export function writeSessionStorage (key, object) {
-  app.global.Application[key] = object
+  Cookies.set(key, JSON.stringify(object))
+  // app.global.Application[key] = object
 }
 export function readSessionStorage (key) {
-  return app.global.Application[key]
+  return JSON.parse(Cookies.get(key) || null)
+  // return app.global.Application[key]
 }
 export function getTemplateConfig () {
   const Config = {
