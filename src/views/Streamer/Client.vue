@@ -4,12 +4,13 @@
       <div id="logs">
         <p v-for="log in logs" :key="log.time">{{log.content}}</p>
       </div>
-      <video autoplay></video>
+      <video autoplay ref="videoMain"></video>
       <v-menu v-model="menu" :position-x="menuX" :position-y="menuY" absolute offset-y>
         <v-list dark style="background-color: rgba(100,100,100,.2);" ref="menuList">
           <v-list-item @click="playStatusChange">{{playStatus?'暂停': '播放'}}</v-list-item>
           <v-list-item @click="volClick">{{vols?'':'取消'}}静音</v-list-item>
           <v-list-item @click="clickHandle">视频统计信息</v-list-item>
+          <v-list-item @click="clickHandle">播放器日志</v-list-item>
         </v-list>
       </v-menu>
       <div id="progressCircle" v-if="loading">
@@ -57,7 +58,7 @@
         <v-spacer></v-spacer>
         <v-tooltip top>
           <template v-slot:activator="{ on, attrs }">
-            <v-btn @click="showDanmuku=!showDanmuku" v-on="on" v-bind="attrs" icon><v-icon>{{danmukuSwitchIcon}}</v-icon></v-btn>
+            <v-btn @click="showDanmukuChange" v-on="on" v-bind="attrs" icon><v-icon>{{danmukuSwitchIcon}}</v-icon></v-btn>
           </template>
           <span>{{showDanmuku?'关闭':'打开'}}弹幕</span>
         </v-tooltip>
@@ -75,7 +76,7 @@
         </v-tooltip>
         <v-tooltip top>
           <template v-slot:activator="{ on, attrs }">
-            <v-btn v-on="on" v-bind="attrs" icon><v-icon>mdi-fullscreen</v-icon></v-btn>
+            <v-btn v-on="on" v-bind="attrs" icon @click="callScreenFull"><v-icon>mdi-fullscreen</v-icon></v-btn>
           </template>
           <span>全屏</span>
         </v-tooltip>
@@ -85,13 +86,19 @@
 </template>
 
 <script>
+import { loadLocalConfig, writeLocalConfig } from '../../utils/tools'
+import moment from 'moment'
+const { app } = require('@electron/remote')
+
 export default {
   data () {
     return {
+      server: Window.$webSocket,
+      screenFullFlag: false,
       preVol: 100,
       vols: 100,
       playStatus: true,
-      loading: false,
+      loading: true,
       toolbarActive: false,
       currentDanmuku: '',
       showDanmuku: true,
@@ -102,7 +109,22 @@ export default {
       menu: false,
       menuX: 0,
       menuY: 0,
-      logs: []
+      logs: [],
+      remoteVideo: new MediaStream(),
+      RTCConnection: null,
+      RTCConfigure: {
+        iceServers:
+        [
+          {
+            urls: 'stun:stun.hellobaka.xyz'
+          },
+          {
+            urls: 'turn:turn.hellobaka.xyz',
+            username: 'aaaaaa',
+            credential: 'bbbbbb'
+          }
+        ]
+      }
     }
   },
   computed: {
@@ -124,6 +146,9 @@ export default {
     },
     playButtonIcon: function () {
       return this.playStatus ? 'mdi-origin' : 'mdi-steam'
+    },
+    config: function () {
+      return app.global.Application.Config || loadLocalConfig('Config')
     }
   },
   mounted () {
@@ -135,8 +160,31 @@ export default {
         this.toolbarActive = false
       }
     }, 100)
+    this.$refs.videoMain.srcObject = this.remoteVideo
+    if (this.config.stunServer) this.RTCConfigure.iceServers[0].urls = this.config.stunServer
+    if (this.config.turnServer) {
+      const result = /turn:(.*?)\[(.*?):(.*?)\]/.exec()
+      if (result.length === 3) {
+        this.RTCConfigure.iceServers[1].urls = `turn:${result[0].trim()}`
+        this.RTCConfigure.iceServers[1].credential = result[1]
+        this.RTCConfigure.iceServers[1].urls = result[2]
+      }
+    }
+    this.showDanmuku = !!this.config.danmukuDefault
+    this.RTCConnection = new RTCPeerConnection(this.RTCConfigure)
+    this.writeLog('已新建RTC连接, 等待服务器响应')
+    this.server.On('RoomEntered', this.handleRoomEnter)
+    this.server.Emit('RoomEntered', { id: 0 })
   },
   methods: {
+    callScreenFull () {
+      if (!this.screenFullFlag) {
+        document.documentElement.requestFullscreen()
+      } else {
+        document.exitFullscreen()
+      }
+      this.screenFullFlag = !this.screenFullFlag
+    },
     volClick () {
       if (this.vols !== 0) {
         this.preVol = this.vols
@@ -175,21 +223,38 @@ export default {
       }
     },
     writeLog (log) {
-      this.logs.push({ content: log, time: new Date().getTime() })
+      this.logs.push({ content: `[${moment().format('yyyy-MM-DD HH:mm:ss')}] ${log}`, time: new Date().getTime() })
     },
     sendDanmuku () {
       if (this.danmukuCD) return
       if (this.danmukuCDTimer) {
         clearInterval(this.danmukuCDTimer)
       }
-      this.danmukuCD = 5
+      this.danmukuCD = 1
       this.danmukuCDTimer = setInterval(() => {
         if (this.danmukuCD === 0) return
         this.danmukuCD--
       }, 1000)
       this.writeLog(this.currentDanmuku)
       this.currentDanmuku = ''
-    }
+    },
+    showDanmukuChange () {
+      this.showDanmuku = !this.showDanmuku
+      if (this.config.danmukuRemember) {
+        writeLocalConfig('Config', 'danmukuDefault', this.showDanmuku)
+      }
+    },
+    async handleRoomEnter (data) {
+      if (data.code !== 200) {
+        this.snackbar.Error(data.msg)
+      } else {
+        this.server.On('CreateOffer', data => {
+        })
+        this.server.Emit('CreateOffer', await this.createOffer())
+      }
+    },
+    async createOffer () {}
+
   }
 }
 </script>
@@ -214,12 +279,29 @@ export default {
   margin-left: 10px;
   /* margin-top: 10px; */
   bottom: 50px;
-  max-height: 500px;
+  max-height: 150px;
   border-radius: 10px;
-  width: 30%;
+  overflow: auto;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+  width: 40%;
   min-width: 150px;
-  color: white;
+  color: lightgray;
+  z-index: 10;
+  transition: .2s all linear;
   /* background: rgba(100,100,100,.5); */
+}
+#logs::-webkit-scrollbar {
+  width : 10px;
+  height: 1px;
+}
+#logs::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background   : #535353;
+}
+#logs::-webkit-scrollbar-track {
+  border-radius: 10px;
+  background   : #ededed;
 }
 .spacer {
   height: 100%;
