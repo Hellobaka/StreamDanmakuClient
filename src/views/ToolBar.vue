@@ -78,6 +78,8 @@ export default {
     }
   },
   mounted () {
+    writeSessionStorage('LoginFlag', false)
+    writeSessionStorage('user', null)
     this.config = loadLocalConfig('Config')
     writeSessionStorage('Config', this.config)
     if (this.config && this.config.themeColor) {

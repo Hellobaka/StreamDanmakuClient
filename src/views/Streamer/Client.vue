@@ -225,6 +225,7 @@ export default {
       }
     },
     writeLog (log) {
+      if (!log) return
       this.logs.push({ content: `[${moment().format('yyyy-MM-DD HH:mm:ss')}] ${log}`, time: new Date().getTime() })
     },
     sendDanmuku () {

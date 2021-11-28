@@ -122,28 +122,29 @@ export default {
       passwordDialog: false,
       selectRoomID: 0,
       selectRoomPassword: '',
-      formSend: false,
+      formSend: true,
       server: Window.$WebSocket,
-      roomList: [
-        {
-          id: 1,
-          creator: '666',
-          title: 'testRoom',
-          time: '2021-11-18 13:46:02',
-          passwordNeeded: false,
-          personCount: 10,
-          max: 30
-        },
-        {
-          id: 2,
-          creator: '666777',
-          title: 'testRoom-2',
-          time: '2021-11-18 10:46:02',
-          passwordNeeded: true,
-          personCount: 114514,
-          max: -1
-        }
-      ]
+      roomList: []
+      // roomList: [
+      //   {
+      //     id: 1,
+      //     creator: '666',
+      //     title: 'testRoom',
+      //     time: '2021-11-18 13:46:02',
+      //     passwordNeeded: false,
+      //     personCount: 10,
+      //     max: 30
+      //   },
+      //   {
+      //     id: 2,
+      //     creator: '666777',
+      //     title: 'testRoom-2',
+      //     time: '2021-11-18 10:46:02',
+      //     passwordNeeded: true,
+      //     personCount: 114514,
+      //     max: -1
+      //   }
+      // ]
     }
   },
   methods: {
@@ -171,7 +172,7 @@ export default {
       this.server.On('EnterRoom', (data) => {
         this.formSend = false
         if (data.code === 200) {
-          createChildWindow('streamer/client/')
+          createChildWindow(`streamer/client?id=${id}`)
         } else {
           this.snackbar.Error(data.msg)
         }
@@ -179,7 +180,7 @@ export default {
       this.server.Emit('EnterRoom', { id: this.selectRoomID, password: this.selectRoomPassword })
       this.formSend = false
       // this.$router.push('streamer/client')
-      createChildWindow('streamer/client/')
+      createChildWindow(`streamer/client?id=${id}`)
     },
     callNewRoom () {
       this.newRoomDialog = true
@@ -201,7 +202,16 @@ export default {
     if (!this.user || !readSessionStorage('LoginFlag')) {
       Info('登录失效，点击重新登录').then(() => { window.location.href = './' })
     }
-    console.log(this.user)
+    this.server.On('RoomList', data => {
+      this.formSend = false
+      console.log(data)
+      if (data.code === 200) {
+        this.roomList = data.data || []
+      } else {
+        this.snackbar.Error(data.msg)
+      }
+    })
+    this.server.Emit('RoomList', {})
   }
 }
 </script>
