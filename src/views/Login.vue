@@ -68,7 +68,7 @@ export default {
       }
       const form = { account: this.loginConfig.account, password: this.loginConfig.password }
       this.formSend = true
-      writeLocalConfig('LoginConfig', 'account', this.loginConfig.account)
+      writeLocalConfig('LoginConfig', 'account', this.loginConfig.account, true)
       this.server.On('Login', (data) => {
         if (data.code === 200) {
           writeLocalConfig('JWT', 'token', data.data)
@@ -78,14 +78,14 @@ export default {
           this.formSend = false
         }
       })
-      this.server.TempGetInfoCallback = (data) => {
+      this.server.TempGetInfoCallback = async (data) => {
         this.formSend = false
         if (data.code === 200) {
           this.snackbar.Success('登录成功')
           if (this.loginConfig.rememberPassword) {
-            writeLocalConfig('LoginConfig', 'password', this.loginConfig.password)
+            writeLocalConfig('LoginConfig', 'password', this.loginConfig.password, true)
           }
-          writeSessionStorage('LoginFlag', true)
+          await writeSessionStorage('LoginFlag', true)
           this.$router.replace({ path: './roomList' })
         } else {
           this.snackbar.Error(data.msg)
@@ -96,14 +96,14 @@ export default {
     loginConfigChange (config) {
       switch (config) {
         case 'RememberPassword':
-          writeLocalConfig('LoginConfig', 'rememberPassword', this.loginConfig.rememberPassword)
+          writeLocalConfig('LoginConfig', 'rememberPassword', this.loginConfig.rememberPassword, true)
           break
         case 'AutoLogin':
           if (this.loginConfig.autoLogin) {
             this.loginConfig.rememberPassword = true
-            writeLocalConfig('LoginConfig', 'rememberPassword', this.loginConfig.rememberPassword)
+            writeLocalConfig('LoginConfig', 'rememberPassword', this.loginConfig.rememberPassword, true)
           }
-          writeLocalConfig('LoginConfig', 'autoLogin', this.loginConfig.autoLogin)
+          writeLocalConfig('LoginConfig', 'autoLogin', this.loginConfig.autoLogin, true)
           break
       }
     },
@@ -114,7 +114,7 @@ export default {
     }
   },
   mounted () {
-    this.loginConfig = loadLocalConfig('LoginConfig')
+    this.loginConfig = loadLocalConfig('LoginConfig', true)
     if (this.loginConfig.autoLogin) {
       this.login()
     }

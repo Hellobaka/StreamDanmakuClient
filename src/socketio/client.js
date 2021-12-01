@@ -2,7 +2,7 @@ const url = 'ws://127.0.0.1:6235/main'
 let reconnectCount = 0
 
 const { Info } = require('../utils/dialog')
-const { readSessionStorage, writeSessionStorage, loadLocalConfig } = require('../utils/tools')
+const { readSessionStorage, writeSessionStorage, loadLocalConfig, routerJump, writeLocalConfig } = require('../utils/tools')
 
 Window.$WebSocket = { connection: new WebSocket(url) }
 const server = Window.$WebSocket
@@ -52,19 +52,20 @@ function On (type, callback) {
 server.On = On
 server.Emit = Emit
 server.user = {}
+server.delay = 0
 server.On('HeartBeat', (data) => {
-  console.log(`Ping: ${Math.abs(new Date().getTime() - parseInt(data.timestamp) + 28800000)}ms`)
+  server.delay = Math.abs(new Date().getTime() - parseInt(data.timestamp) + 28800000)
 })
-server.On('SocketID', (data) => {
+server.On('SocketID', async (data) => {
   console.log('getSocketID: ', data)
-  writeSessionStorage('SocketID', data)
+  await writeSessionStorage('SocketID', data)
 })
-server.On('GetInfo', (data) => {
-  writeSessionStorage('user', {})
+server.On('GetInfo', async (data) => {
+  await writeSessionStorage('user', null)
   // writeSessionStorage('LoginFlag', false)
-  if (readSessionStorage('StreamFlag')) {
+  if (await readSessionStorage('StreamFlag')) {
     Emit('GetInfo', { loginFlag: true, jwt: loadLocalConfig('JWT').token, streamFlag: true })
-  } else if (readSessionStorage('LoginFlag')) {
+  } else if (await readSessionStorage('LoginFlag')) {
     Emit('GetInfo', { loginFlag: true, jwt: loadLocalConfig('JWT').token })
   } else {
     Emit('GetInfo', { loginFlag: false })
@@ -73,15 +74,21 @@ server.On('GetInfo', (data) => {
 server.On('GetInfoResult', async (data) => {
   console.log('InfoResult: ', data)
   if (data.code !== 200) {
-    writeSessionStorage('user', {})
-    writeSessionStorage('LoginFlag', false)
+    await writeSessionStorage('user', null)
+    await writeSessionStorage('LoginFlag', false)
     await Info(data.msg)
     server.TempGetInfoCallback(data)
     server.TempGetInfoCallback = (data) => {}
-    window.location.href = './'
+    routerJump(null, './', true)
   } else {
-    writeSessionStorage('user', data.data)
-    writeSessionStorage('LoginFlag', true)
+    if (data.data) {
+      await writeSessionStorage('user', data.data)
+      await writeSessionStorage('LoginFlag', true)
+      writeLocalConfig('Session', 'UserID', data.data.Id, true)
+    } else {
+      await writeSessionStorage('user', null)
+      await writeSessionStorage('LoginFlag', false)
+    }
     server.TempGetInfoCallback(data)
     server.TempGetInfoCallback = (data) => {}
   }

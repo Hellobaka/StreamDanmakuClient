@@ -3,56 +3,80 @@
 const fs = require('fs-extra')
 const path = require('path')
 
-const { app } = require('@electron/remote')
+const { app, session } = require('@electron/remote')
 import store from '@/store'
 
 const md5 = require('js-md5')
 const SALT = 'I AM FW'
 
 const isDev = !app.isPackaged
-import Cookies from 'js-cookie'
 const appRoot = isDev ? path.resolve(__dirname, '..', '..') : path.resolve(app.getAppPath(), '..', '..')
 const userDataPath = path.resolve('E:\\Code\\webrtc-client\\dist_electron', 'userData')
-const userConfigPath = path.resolve(userDataPath, 'Config.json')
+const loginConfigPath = path.resolve(userDataPath, 'Config.json')
 const userPath = app.getPath('userData')
+
 fs.ensureDir(userDataPath)
-console.log(userConfigPath)
+function getUserConfigPath () {
+  return path.resolve(userDataPath, loadLocalConfig('Session', true).UserID.toString(), 'Config.json')
+}
 export function md5Encrypt (msg) {
   msg += SALT
   return md5(msg)
 }
-export function writeLocalConfig (section, key, value) {
-  if (fs.existsSync(userConfigPath)) {
-    const mainConfig = fs.readJSONSync(userConfigPath)
+export function writeLocalConfig (section, key, value, isLoginConfig = false) {
+  const path = isLoginConfig ? loginConfigPath : getUserConfigPath()
+  if (fs.existsSync(path)) {
+    const mainConfig = fs.readJSONSync(path)
     if (!mainConfig[section]) mainConfig[section] = {}
     mainConfig[section][key] = value
-    fs.writeJSONSync(userConfigPath, mainConfig)
+    fs.writeJSONSync(path, mainConfig)
   } else {
-    fs.writeJSONSync(userConfigPath, {})
+    fs.writeJSONSync(path, {})
   }
 }
-export function loadLocalConfig (section) {
-  if (fs.existsSync(userConfigPath)) {
+let routerSave = null
+export function routerJump (router, path, replace = false) {
+  if (router) routerSave = router
+  else router = routerSave
+
+  if (!isDev && path === './') window.location.href = './index.html'
+  else if (replace) router.replace({ path })
+  else router.push(path)
+}
+export function loadLocalConfig (section, isLoginConfig = false) {
+  const configPath = isLoginConfig ? loginConfigPath : getUserConfigPath()
+  fs.ensureDir(path.dirname(configPath))
+  if (fs.existsSync(configPath)) {
     try {
-      const mainConfig = fs.readJSONSync(userConfigPath)
+      const mainConfig = fs.readJSONSync(configPath)
       return mainConfig[section]
     } catch {
       const newConfig = getTemplateConfig()
-      fs.writeJSONSync(userConfigPath, newConfig)
+      fs.writeJSONSync(configPath, newConfig)
       return newConfig[section]
     }
   } else {
     const newConfig = getTemplateConfig()
-    fs.writeJSONSync(userConfigPath, newConfig)
+    fs.writeJSONSync(configPath, newConfig)
     return newConfig[section]
   }
 }
-export function writeSessionStorage (key, object) {
-  Cookies.set(key, JSON.stringify(object))
+export async function writeSessionStorage (key, object) {
+  console.log('write', key, object)
+  await session.defaultSession.cookies.set({ url: 'http://streamer.hellobaka.xyz', value: JSON.stringify(object), name: key })
+    .catch((error) => {
+      console.error(error)
+    })
+  // Cookies.set(key, JSON.stringify(object), { path: 'http://streamer.hellobaka.xyz' })
   // app.global.Application[key] = object
 }
-export function readSessionStorage (key) {
-  return JSON.parse(Cookies.get(key) || null)
+export async function readSessionStorage (key) {
+  const result = await session.defaultSession.cookies.get({ url: 'http://streamer.hellobaka.xyz' })
+  const r = JSON.parse(result.find(x => x.name === key)?.value || null)
+  console.log('read', key, r)
+  return r
+  // console.log(Cookies.get())
+  // return JSON.parse(Cookies.get(key) || null)
   // return app.global.Application[key]
 }
 export function getTemplateConfig () {
