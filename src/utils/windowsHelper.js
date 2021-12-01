@@ -5,15 +5,17 @@ app.global.Application.MainWindowID = 0
 export function setMainWindowID (id) {
   app.global.Application.MainWindowID = id
 }
-export function createChildWindow (url) {
+export function createChildWindow (url, client = true) {
   url = app.global.Application.BASE_URL + '#/' + url
   console.log('childWindow url: ', url)
   if (!url) return
   const childWin = new BrowserWindow({
-    width: 1600,
-    height: 900,
-    minWidth: 850,
-    minHeight: 420,
+    width: client ? 1600 : 450,
+    height: client ? 900 : 600,
+    minWidth: client ? 850 : 200,
+    minHeight: client ? 420 : 200,
+    transparent: !client,
+    frame: client,
     show: false,
     title: 'child',
     webPreferences: {
@@ -25,6 +27,7 @@ export function createChildWindow (url) {
       enableRemoteModule: true
     }
   })
+  // childWin.menuBarVisible = false
   require('@electron/remote/main').enable(childWin.webContents)
   const WindowsMap = app.global.Application.WindowsMap
   const MainWindowID = app.global.Application.MainWindowID === 0 ? 1 : app.global.Application.MainWindowID
@@ -39,9 +42,10 @@ export function createChildWindow (url) {
   })
   childWin.once('ready-to-show', () => {
     childWin.show()
+    childWin.webContents.openDevTools()
+    if (mainWindow) {
+      mainWindow.hide()
+    }
   })
-  if (mainWindow) {
-    mainWindow.hide()
-  }
   childWin.loadURL(url)
 }
