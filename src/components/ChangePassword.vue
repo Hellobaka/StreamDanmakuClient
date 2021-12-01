@@ -105,9 +105,9 @@ export default {
           this.formSend = false
           if (data.code === 200) {
             Info('修改成功，点击确定重新登录。', '密码修改')
-              .then(() => {
-                writeSessionStorage('LoginFlag', false)
-                writeSessionStorage('user', null)
+              .then(async () => {
+                await writeSessionStorage('LoginFlag', false)
+                await writeSessionStorage('user', null)
                 writeLocalConfig('JWT', 'token', '')
               })
               .finally(() => {

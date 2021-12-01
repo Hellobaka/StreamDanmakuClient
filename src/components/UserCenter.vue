@@ -85,7 +85,7 @@
 <script>
 import ChangeEmail from './ChangeEmail'
 import ChangePassword from './ChangePassword.vue'
-import { readSessionStorage, writeLocalConfig, writeSessionStorage } from '../utils/tools'
+import { readSessionStorage, routerJump, writeLocalConfig, writeSessionStorage } from '../utils/tools'
 const { Confirm } = require('../utils/dialog')
 
 export default {
@@ -108,19 +108,20 @@ export default {
     async logout () {
       const res = await Confirm('确认要注销吗？', '注销提醒')
       if (res) {
+        this.closeDialog()
         writeLocalConfig('Config', 'autoLogin', false)
-        writeSessionStorage('LoginFlag', false)
-        writeSessionStorage('user', {})
-        window.location.href = './'
+        await writeSessionStorage('LoginFlag', false)
+        await writeSessionStorage('user', null)
+        routerJump(this.$router, './', true)
       }
     },
     clickHandle () {},
     onNickNameChange (e) {
-      this.server.On('ChangeNickName', data => {
+      this.server.On('ChangeNickName', async data => {
         if (data.code === 200) {
           this.snackbar.Success('修改成功')
           this.user.NickName = this.editNickName
-          writeSessionStorage('user', this.user)
+          await writeSessionStorage('user', this.user)
           this.nickEditFlag = false
         } else {
           this.snackbar.Error(data.msg)
@@ -146,8 +147,8 @@ export default {
       this.$emit('onDialogClose', true)
     }
   },
-  mounted () {
-    this.user = readSessionStorage('user')
+  async mounted () {
+    this.user = await readSessionStorage('user')
   }
 }
 </script>

@@ -86,7 +86,7 @@
 </template>
 
 <script>
-import { readSessionStorage, writeLocalConfig, writeSessionStorage } from '../../utils/tools'
+import { loadLocalConfig, writeLocalConfig, writeSessionStorage } from '../../utils/tools'
 import moment from 'moment'
 
 export default {
@@ -147,10 +147,14 @@ export default {
       return this.playStatus ? 'mdi-origin' : 'mdi-steam'
     },
     config: function () {
-      return readSessionStorage('Config')
+      return loadLocalConfig('Config')
     }
   },
   mounted () {
+    this.server.TempGetInfoCallback = (data) => {
+      this.server.On('RoomEntered', this.handleRoomEnter)
+      this.server.Emit('RoomEntered', { id: 0 })
+    }
     const timeout = 1500
     setInterval(() => {
       if (!this.toolbarActive || this.danmukuInputFlag) return
@@ -163,17 +167,16 @@ export default {
     if (this.config.stunServer) this.RTCConfigure.iceServers[0].urls = this.config.stunServer
     if (this.config.turnServer) {
       const result = /turn:(.*?)\[(.*?):(.*?)\]/.exec()
+      const serverLength = this.RTCConfigure.iceServers.length - 1
       if (result.length === 3) {
-        this.RTCConfigure.iceServers[1].urls = `turn:${result[0].trim()}`
-        this.RTCConfigure.iceServers[1].credential = result[1]
-        this.RTCConfigure.iceServers[1].urls = result[2]
+        this.RTCConfigure.iceServers[serverLength].urls = `turn:${result[0].trim()}`
+        this.RTCConfigure.iceServers[serverLength].credential = result[1]
+        this.RTCConfigure.iceServers[serverLength].urls = result[2]
       }
     }
     this.showDanmuku = !!this.config.danmukuDefault
     this.RTCConnection = new RTCPeerConnection(this.RTCConfigure)
     this.writeLog('已新建RTC连接, 等待服务器响应')
-    this.server.On('RoomEntered', this.handleRoomEnter)
-    this.server.Emit('RoomEntered', { id: 0 })
   },
   beforeCreate () {
     writeSessionStorage('StreamFlag', true)
@@ -291,8 +294,8 @@ export default {
       }
     }
   },
-  beforeDestroy () {
-    writeSessionStorage('StreamFlag', false)
+  async beforeDestroy () {
+    await writeSessionStorage('StreamFlag', false)
     this.RTCConnection.close()
     this.RTCConnection.onicecandidate = null
     this.RTCConnection.ontrack = null

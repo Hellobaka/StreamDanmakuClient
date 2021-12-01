@@ -143,9 +143,9 @@ export default {
       }
     }
   },
-  mounted () {
+  async mounted () {
     this.verifyOldEmailFlag = true
-    this.user = readSessionStorage('user')
+    this.user = await readSessionStorage('user')
   }
 }
 </script>

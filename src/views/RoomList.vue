@@ -1,35 +1,39 @@
 <template>
   <div data-app="true">
     <v-list subheader two-line>
-      <v-subheader inset>当前共有公开房间{{ roomList.length }}个</v-subheader>
+      <v-subheader inset>
+        当前共有公开房间{{ roomList.length }}个
+        <v-btn icon @click="getRoomList"><v-icon>mdi-refresh</v-icon></v-btn>
+        <v-btn icon @click="createServerWin"><v-icon>mdi-plus</v-icon></v-btn>
+      </v-subheader>
       <v-list-item
         v-for="item in roomList"
-        :key="item.creator"
-        @dblclick="roomClick(item.id)"
+        :key="item.CreatorName"
+        @dblclick="roomClick(item.RoomID)"
         @click="signalClickHandle"
       >
         <v-list-item-avatar>
           <v-icon
             class="grey lighten-3"
-            v-show="item.passwordNeeded"
+            v-show="item.PasswordNeeded"
           >
             mdi-lock
           </v-icon>
         </v-list-item-avatar>
         <v-list-item-content>
-          <v-list-item-title v-text="item.title"></v-list-item-title>
+          <v-list-item-title v-text="item.Title"></v-list-item-title>
           <v-list-item-subtitle
-            v-text="`${item.creator} - ${item.time}`"
+            v-text="`${item.CreatorName} - ${item.time}`"
           ></v-list-item-subtitle>
+          <v-dialog max-width="500" persistent v-model="passwordDialog">
+            <RoomPassword @onDialogClose="closePasswordDialog" v-if="passwordDialog" :RoomID="item.RoomID"></RoomPassword>
+          </v-dialog>
         </v-list-item-content>
         <v-list-item-action>
-          <span style="color: gray;">房间：{{item.personCount}}/{{item.max==-1?'∞':item.max}}</span>
+          <span style="color: gray;">房间：{{item.ClientCount}}/{{item.Max==-1?'∞':item.Max}}</span>
         </v-list-item-action>
       </v-list-item>
     </v-list>
-    <v-dialog max-width="500" persistent v-model="passwordDialog">
-      <RoomPassword @onDialogClose="closePasswordDialog" v-if="passwordDialog"></RoomPassword>
-    </v-dialog>
     <v-speed-dial
       v-model="fab"
       bottom
@@ -102,10 +106,11 @@
 </template>
 
 <script>
+import moment from 'moment'
 import NewRoom from '../components/NewRoom.vue'
 import RoomPassword from '../components/RoomPassword.vue'
 import { Info } from '../utils/dialog'
-import { readSessionStorage } from '../utils/tools'
+import { loadLocalConfig, readSessionStorage, routerJump } from '../utils/tools'
 import { createChildWindow } from '../utils/windowsHelper'
 export default {
   components: {
@@ -151,14 +156,14 @@ export default {
     roomClick (id) {
       this.selectRoomID = -1
       this.selectRoomPassword = ''
-      const room = this.roomList.find(x => x.id === id)
+      const room = this.roomList.find(x => x.RoomID === id)
       if (room) {
-        if (room.passwordNeeded) {
+        if (room.PasswordNeeded) {
           this.selectRoomID = id
           this.passwordDialog = true
           return
         }
-        if (room.max !== 51 && room.personCount >= room.max) {
+        if (room.Max !== 51 && room.ClientCount >= room.Max) {
           this.snackbar.Error('房间已满')
           return
         }
@@ -180,7 +185,7 @@ export default {
       this.server.Emit('EnterRoom', { id: this.selectRoomID, password: this.selectRoomPassword })
       this.formSend = false
       // this.$router.push('streamer/client')
-      createChildWindow(`streamer/client?id=${id}`)
+      createChildWindow(`streamer/client?id=${id}`, true)
     },
     callNewRoom () {
       this.newRoomDialog = true
@@ -195,23 +200,41 @@ export default {
         this.enterRoom(this.selectRoomID)
       }
     },
-    signalClickHandle () {}
+    signalClickHandle () {},
+    getRoomList () {
+      this.server.On('RoomList', data => {
+        this.formSend = false
+        console.log(data)
+        if (data.code === 200) {
+          this.roomList = data.data || []
+          this.roomList.forEach(x => {
+            x.time = moment(x.CreateTime).format('yyyy-MM-DD HH:mm:ss')
+          })
+        } else {
+          this.snackbar.Error(data.msg)
+        }
+      })
+      this.formSend = true
+      this.server.Emit('RoomList', {})
+    },
+    createServerWin () {
+      createChildWindow('streamer/server', false)
+    }
   },
   mounted () {
-    this.user = readSessionStorage('user')
-    if (!this.user || !readSessionStorage('LoginFlag')) {
-      Info('登录失效，点击重新登录').then(() => { window.location.href = './' })
+    this.config = loadLocalConfig('Config')
+    // writeSessionStorage('Config', this.config)
+    if (this.config && this.config.themeColor) {
+      this.$vuetify.theme.themes.light.primary = this.config.themeColor
     }
-    this.server.On('RoomList', data => {
-      this.formSend = false
-      console.log(data)
-      if (data.code === 200) {
-        this.roomList = data.data || []
-      } else {
-        this.snackbar.Error(data.msg)
+    console.log('Load Local Config Success.')
+    readSessionStorage('user').then(async data => {
+      this.user = data
+      if (!this.user || !await readSessionStorage('LoginFlag')) {
+        Info('登录失效，点击重新登录').then(() => { routerJump(this.$router, './', true) })
       }
+      this.getRoomList()
     })
-    this.server.Emit('RoomList', {})
   }
 }
 </script>
