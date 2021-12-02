@@ -260,7 +260,7 @@ export default {
         this.RTCConnection.onicecandidate = (e) => {
           this.writeLog('收到远程方令牌')
           if (e.candidate) {
-            this.server.Emit('candidate', { candidate: e.candidate })
+            this.server.Emit('Candidate', { data: e.candidate })
           }
         }
 
@@ -281,7 +281,7 @@ export default {
         const answer = await this.RTCConnection.createAnswer()
         await this.RTCConnection.setLocalDescription(answer)
         this.writeLog('向远程方发送连接响应')
-        this.server.Emit('Answer', { answer })
+        this.server.Emit('Answer', { data: answer })
       } else {
         this.snackbar.Error(data.msg)
       }
@@ -295,6 +295,7 @@ export default {
     }
   },
   async beforeDestroy () {
+    this.server.Emit('Leave', {})
     await writeSessionStorage('StreamFlag', false)
     this.RTCConnection.close()
     this.RTCConnection.onicecandidate = null
