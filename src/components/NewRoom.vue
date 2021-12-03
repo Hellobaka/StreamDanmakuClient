@@ -38,6 +38,7 @@
 </template>
 
 <script>
+import { createChildWindow } from '../utils/windowsHelper'
 export default {
   name: 'NewRoom',
   data () {
@@ -74,12 +75,18 @@ export default {
         this.formSend = false
         if (data.code === 200) {
           this.snackbar.Success('房间创建成功，进入推流界面……')
+          this.createServerWin()
+          this.$emit('onDialogClose', true)
         } else {
           this.snackbar.Error(data.msg)
         }
       })
       this.server.Emit('CreateRoom', { title: this.title, isPublic: this.isPublic, password: this.password, max: this.max })
+    },
+    createServerWin () {
+      createChildWindow('streamer/server', false)
     }
+
   }
 }
 </script>

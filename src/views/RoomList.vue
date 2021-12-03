@@ -177,15 +177,15 @@ export default {
       this.server.On('EnterRoom', (data) => {
         this.formSend = false
         if (data.code === 200) {
-          createChildWindow(`streamer/client?id=${id}`)
+          createChildWindow(`streamer/client?id=${id}`, true)
         } else {
           this.snackbar.Error(data.msg)
         }
       })
-      this.server.Emit('EnterRoom', { id: this.selectRoomID, password: this.selectRoomPassword })
-      this.formSend = false
+      this.server.Emit('EnterRoom', { id, password: this.selectRoomPassword })
+      // this.formSend = false
       // this.$router.push('streamer/client')
-      createChildWindow(`streamer/client?id=${id}`, true)
+      // createChildWindow(`streamer/client?id=${id}`, true)
     },
     callNewRoom () {
       this.newRoomDialog = true
