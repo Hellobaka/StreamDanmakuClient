@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { BrowserWindow, app } from '@electron/remote'
+import { writeSessionStorage } from './tools'
 
 app.global.Application.MainWindowID = 0
 export function setMainWindowID (id) {
@@ -34,13 +35,15 @@ export function createChildWindow (url, client = true) {
   const ChildWindowID = childWin.id
   WindowsMap.set(childWin.id, childWin)
   const mainWindow = WindowsMap.get(MainWindowID)
-  childWin.on('closed', () => {
+  childWin.on('closed', async () => {
+    await writeSessionStorage('StreamFlag', false)
     WindowsMap.delete(ChildWindowID)
     if (mainWindow) {
       mainWindow.show()
     }
   })
-  childWin.once('ready-to-show', () => {
+  childWin.once('ready-to-show', async () => {
+    await writeSessionStorage('StreamFlag', true)
     childWin.show()
     childWin.webContents.openDevTools()
     if (mainWindow) {
