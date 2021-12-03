@@ -1,7 +1,7 @@
 <template>
   <v-app id="frameMain">
     <v-app-bar app dense class="draggable" id="toolBar" ref="header">
-      <span style="font-size: 15px;">房间: {{10}} - {{onlineCount}}人在线 延时: {{serverDelay}} ms
+      <span style="font-size: 15px;">房间: {{$route.query.id}} - {{onlineCount}}人在线 延时: {{serverDelay}} ms
         <div :style="`margin-left: 10px;float:right;width: 20px; height: 20px; border: 1px solid white; border-radius: 50%; background-color: ${serverConnected?'green':'coral'}`"></div>
       </span>
       <v-spacer></v-spacer>
@@ -53,7 +53,7 @@
 <script>
 // eslint-disable-next-line no-unused-vars
 import { screen, Tray, Menu } from '@electron/remote'
-import { loadLocalConfig, writeSessionStorage } from '../../utils/tools'
+import { loadLocalConfig } from '../../utils/tools'
 import { Confirm } from '../../utils/dialog'
 import moment from 'moment'
 const { SDPTools } = require('../../utils/sdp_tools')
@@ -90,7 +90,9 @@ export default {
             credential: 'bbbbbb'
           }
         ]
-      }
+      },
+      timestampPrev: 0,
+      bytesPrev: 0
     }
   },
   computed: {
@@ -100,9 +102,6 @@ export default {
     danmukuCount: function () {
       return this.danmukuList.filter(x => !x.log).length
     }
-  },
-  beforeCreate () {
-    writeSessionStorage('StreamFlag', true)
   },
   beforeDestroy () {
     if (this.tray) this.tray.destroy()
@@ -115,20 +114,22 @@ export default {
   },
   mounted () {
     this.$vuetify.theme.dark = true
-    this.thisWindow = require('@electron/remote').getCurrentWindow()
-    this.init()
-    this.$refs.setTop.$el.onmouseleave = () => {
-      if (this.ignoreMouse) this.thisWindow.setIgnoreMouseEvents(true, { forward: true })
-    }
-    this.$refs.setTop.$el.onmouseenter = () => {
-      this.thisWindow.setIgnoreMouseEvents(false)
-    }
-    this.$refs.setTransplant.$el.onmouseleave = this.$refs.setTop.$el.onmouseleave
-    this.$refs.setTransplant.$el.onmouseenter = this.$refs.setTop.$el.onmouseenter
+    this.server.TempGetInfoCallback = (data) => {
+      this.thisWindow = require('@electron/remote').getCurrentWindow()
+      this.init()
+      this.$refs.setTop.$el.onmouseleave = () => {
+        if (this.ignoreMouse) this.thisWindow.setIgnoreMouseEvents(true, { forward: true })
+      }
+      this.$refs.setTop.$el.onmouseenter = () => {
+        this.thisWindow.setIgnoreMouseEvents(false)
+      }
+      this.$refs.setTransplant.$el.onmouseleave = this.$refs.setTop.$el.onmouseleave
+      this.$refs.setTransplant.$el.onmouseenter = this.$refs.setTop.$el.onmouseenter
 
-    if (this.tray) {
-      this.tray.destroy()
-      this.tray = null
+      if (this.tray) {
+        this.tray.destroy()
+        this.tray = null
+      }
     }
     // this.tray = new Tray('src/public/main.ico')
 
@@ -198,7 +199,6 @@ export default {
         this.listHeight = totalHeight - this.headerHeight - this.footerHeight
       })
       if (!await this.mediaStreamInit()) return
-      this.writeLog('初始化完成')
       this.server.On('Offer', this.sendOffer)
       this.server.On('Answer', this.sendAnswer)
       this.server.On('Candidate', this.sendCandidate)
@@ -217,10 +217,28 @@ export default {
       setInterval(() => {
         this.RTCConnectionList.forEach(async connection => {
           connection.getStats(null).then(result => {
-            // monitor bitrate and upload
+            result.forEach((report) => {
+              const now = report.timestamp
+              let bitrate
+              if (report.type === 'outbound-rtp' && report.mediaType === 'video') {
+                const bytes = report.bytesSent
+                if (this.timestampPrev) {
+                  bitrate = (bytes - this.bytesPrev) / (now - this.timestampPrev)
+                  bitrate = Math.floor(bitrate)
+                }
+                this.bytesPrev = bytes
+                this.timestampPrev = now
+              }
+              if (bitrate) {
+                this.bitRate = this.speedParse(bitrate)
+                this.networkUpload = this.speedParse(this.onlineCount * bitrate)
+              }
+            })
           })
         })
       }, 1000)
+      this.writeLog('初始化完成')
+
       // this.RTCConnectionList.push(new RTCPeerConnection(this.RTCConfigure))
       // this.writeLog('已新建RTC连接, 等待连接...')
     },
@@ -229,6 +247,15 @@ export default {
       if (res) {
         if (this.tray) this.tray.destroy()
         this.thisWindow.close()
+      }
+    },
+    speedParse (speed) {
+      if (speed < 1024) {
+        return `${speed} KB/s`
+      } else if (speed > 1024 && speed < 1024 * 1024) {
+        return `${speed / 1024} MB/s`
+      } else {
+        return `${speed / 1024 / 1024} GB/s`
       }
     },
     setTopMost () {
@@ -288,23 +315,28 @@ export default {
       return true
     },
     async sendOffer (data) {
-      if (this.RTCConnectionList.has(data.data.from)) {
+      console.log('receive offer', data)
+      if (this.RTCConnectionList.has(data.from)) {
         // ?
-        const PeerConnection = this.RTCConnectionList.get(data.data.from)
+        console.log('duplicate client')
+        const PeerConnection = this.RTCConnectionList.get(data.from)
         PeerConnection.close()
         PeerConnection.ontrack = null
         PeerConnection.onicecandidate = null
+        this.onlineCount--
       }
+      this.onlineCount++
       const PeerConnection = new RTCPeerConnection(this.RTCConfigure)
       PeerConnection.onicecandidate = (e) => {
         if (e.candidate) {
-          this.server.Emit('Candidate', { data: e.candidate, to: data.data.from })
+          this.server.Emit('Candidate', { candidate: e.candidate, to: data.from })
         }
       }
       if (this.remoteVideo) this.remoteVideo.getTracks().forEach(x => PeerConnection.addTrack(x))
-
+      console.log('set tracks')
       const offer = await PeerConnection.createOffer()
-      this.server.Emit('Offer', { data: offer, to: data.data.from })
+      this.server.Emit('Offer', { offer, to: data.from })
+      console.log('send offer back')
       PeerConnection.setLocalDescription(offer)
       const sender = PeerConnection.getSenders()[0]
       const videoParameters = sender.getParameters()
@@ -316,33 +348,36 @@ export default {
       videoParameters.degradationPreference = 'balanced'
       // console.warn('videoParameters: \n', JSON.stringify(videoParameters, null, '   '))
       await sender.setParameters(videoParameters)
-      this.RTCConnectionList.set(data.data.from, PeerConnection)
+      this.RTCConnectionList.set(data.from, PeerConnection)
     },
     async sendCandidate (data) {
-      await this.RTCConnectionList.get(data.data.from).addIceCandidate(new RTCIceCandidate(data.data.candidate))
+      console.log('candidate ', data)
+      await this.RTCConnectionList.get(data.from).addIceCandidate(new RTCIceCandidate(data.data))
     },
     async sendAnswer (data) {
-      const parsedSdp = SDPTools.parseSDP(data.data.answer.sdp)
+      console.log('receive answer', data)
+      const parsedSdp = SDPTools.parseSDP(data.data.sdp)
       for (let i = 0; i < parsedSdp.media.length; i++) {
         const media = parsedSdp.media[i]
         const codec = ['VP9', 'VP8']
-        var ASBitrate = document.getElementById('ASBitrate').value
+        var ASBitrate = this.config.bitrate_Stream
         ASBitrate = ASBitrate || 4096
         SDPTools.removeCodecByName(parsedSdp, i, codec)
         SDPTools.setXgoogleBitrate(parsedSdp, ASBitrate, i)
         SDPTools.removeRembAndTransportCC(parsedSdp, i)
         media.payloads = media.payloads.trim()
       }
-      data.answer.sdp = SDPTools.writeSDP(parsedSdp)
-      await this.RTCConnectionList.get(data.data.from).setRemoteDescription(data.data.answer)
+      data.data.sdp = SDPTools.writeSDP(parsedSdp)
+      await this.RTCConnectionList.get(data.from).setRemoteDescription(data.data)
     },
     sendLeave (data) {
-      if (this.RTCConnectionList.has(data.data.from)) {
-        const PeerConnection = this.RTCConnectionList.get(data.data.from)
+      console.log('receive leave', data)
+      if (this.RTCConnectionList.has(data.from)) {
+        const PeerConnection = this.RTCConnectionList.get(data.from)
         PeerConnection.close()
         PeerConnection.ontrack = null
         PeerConnection.onicecandidate = null
-        this.RTCConnectionList.delete(data.data.from)
+        this.RTCConnectionList.delete(data.from)
       } else {
         // ?
       }

@@ -1,7 +1,7 @@
 <template>
   <div style="display: flex;height:100%;" @mousemove="toolbarActiveChange" data-app="true">
     <div id="videoContainer" @contextmenu="showMenu">
-      <div id="logs">
+      <div id="logs" style="display: none;">
         <p v-for="log in logs" :key="log.time">{{log.content}}</p>
       </div>
       <video autoplay ref="videoMain"></video>
@@ -40,7 +40,7 @@
             </v-btn>
             <v-fade-transition>
               <div v-if="hover" id="volControlBox">
-                  <v-slider height="150px" vertical thumb-label v-model="vols" id="volController" :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary"></v-slider>
+                  <v-slider @input="volChange" height="150px" vertical thumb-label v-model="vols" id="volController" :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary"></v-slider>
               </div>
             </v-fade-transition>
           </div>
@@ -86,7 +86,7 @@
 </template>
 
 <script>
-import { loadLocalConfig, writeLocalConfig, writeSessionStorage } from '../../utils/tools'
+import { loadLocalConfig, writeLocalConfig } from '../../utils/tools'
 import moment from 'moment'
 
 export default {
@@ -153,7 +153,7 @@ export default {
   mounted () {
     this.server.TempGetInfoCallback = (data) => {
       this.server.On('RoomEntered', this.handleRoomEnter)
-      this.server.Emit('RoomEntered', { id: 0 })
+      this.server.Emit('RoomEntered', { id: this.$route.query.id })
     }
     const timeout = 1500
     setInterval(() => {
@@ -164,6 +164,13 @@ export default {
       }
     }, 100)
     this.$refs.videoMain.srcObject = this.remoteVideo
+    this.$refs.videoMain.srcObject.onactive = () => {
+      this.loading = false
+    }
+    this.$refs.videoMain.srcObject.oninactive = () => {
+      this.loading = true
+    }
+
     if (this.config.stunServer) this.RTCConfigure.iceServers[0].urls = this.config.stunServer
     if (this.config.turnServer) {
       const result = /turn:(.*?)\[(.*?):(.*?)\]/.exec()
@@ -177,9 +184,6 @@ export default {
     this.showDanmuku = !!this.config.danmukuDefault
     this.RTCConnection = new RTCPeerConnection(this.RTCConfigure)
     this.writeLog('已新建RTC连接, 等待服务器响应')
-  },
-  beforeCreate () {
-    writeSessionStorage('StreamFlag', true)
   },
   methods: {
     callScreenFull () {
@@ -197,6 +201,7 @@ export default {
       } else {
         this.vols = this.preVol
       }
+      this.volChange()
     },
     inputOnFocus () {
       this.danmukuInputFlag = true
@@ -223,8 +228,10 @@ export default {
     playStatusChange () {
       if (this.playStatus) {
         this.playStatus = false
+        this.$refs.videoMain.pause()
       } else {
         this.playStatus = true
+        this.$refs.videoMain.play()
       }
     },
     writeLog (log) {
@@ -260,7 +267,7 @@ export default {
         this.RTCConnection.onicecandidate = (e) => {
           this.writeLog('收到远程方令牌')
           if (e.candidate) {
-            this.server.Emit('Candidate', { data: e.candidate })
+            this.server.Emit('Candidate', { candidate: e.candidate })
           }
         }
 
@@ -275,28 +282,24 @@ export default {
       }
     },
     async OnOffer (data) {
-      if (data.code === 200) {
-        this.writeLog('收到远程方连接响应')
-        await this.RTCConnection.setRemoteDescription(data.data.offer)
-        const answer = await this.RTCConnection.createAnswer()
-        await this.RTCConnection.setLocalDescription(answer)
-        this.writeLog('向远程方发送连接响应')
-        this.server.Emit('Answer', { data: answer })
-      } else {
-        this.snackbar.Error(data.msg)
-      }
+      console.log('offer ', data)
+      this.writeLog('收到远程方连接响应')
+      await this.RTCConnection.setRemoteDescription(data.data)
+      const answer = await this.RTCConnection.createAnswer()
+      await this.RTCConnection.setLocalDescription(answer)
+      this.writeLog('向远程方发送连接响应')
+      this.server.Emit('Answer', { answer })
     },
     async OnCandidate (data) {
-      if (data.code === 200) {
-        await this.RTCConnection.addIceCandidate(new RTCIceCandidate(data.data.candidate))
-      } else {
-        this.snackbar.Error(data.msg)
-      }
+      console.log('candidate ', data)
+      await this.RTCConnection.addIceCandidate(new RTCIceCandidate(data.data))
+    },
+    volChange () {
+      this.$refs.videoMain.volume = this.vols / 100
     }
   },
-  async beforeDestroy () {
+  beforeDestroy () {
     this.server.Emit('Leave', {})
-    await writeSessionStorage('StreamFlag', false)
     this.RTCConnection.close()
     this.RTCConnection.onicecandidate = null
     this.RTCConnection.ontrack = null
