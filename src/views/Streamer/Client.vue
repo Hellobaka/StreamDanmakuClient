@@ -1,16 +1,16 @@
 <template>
   <div style="display: flex;height:100%;" @mousemove="toolbarActiveChange" data-app="true">
     <div id="videoContainer" @contextmenu="showMenu">
-      <div id="logs" style="display: none;">
+      <div id="logs" v-if="showLogs">
         <p v-for="log in logs" :key="log.time">{{log.content}}</p>
       </div>
-      <video autoplay ref="videoMain"></video>
+      <video autoplay ref="videoMain" muted></video>
       <v-menu v-model="menu" :position-x="menuX" :position-y="menuY" absolute offset-y>
         <v-list dark style="background-color: rgba(100,100,100,.2);" ref="menuList">
           <v-list-item @click="playStatusChange">{{playStatus?'暂停': '播放'}}</v-list-item>
           <v-list-item @click="volClick">{{vols?'':'取消'}}静音</v-list-item>
           <v-list-item @click="clickHandle">视频统计信息</v-list-item>
-          <v-list-item @click="clickHandle">播放器日志</v-list-item>
+          <v-list-item @click="showLogs=!showLogs">播放器日志</v-list-item>
         </v-list>
       </v-menu>
       <div id="progressCircle" v-if="loading">
@@ -29,7 +29,7 @@
         </v-tooltip>
         <v-tooltip top>
           <template v-slot:activator="{ on, attrs }">
-            <v-btn v-on="on" v-bind="attrs" icon><v-icon>mdi-refresh</v-icon></v-btn>
+            <v-btn v-on="on" v-bind="attrs" icon @click="reconnect"><v-icon>mdi-refresh</v-icon></v-btn>
           </template>
           <span>重新连接</span>
         </v-tooltip>
@@ -88,12 +88,14 @@
 <script>
 import { loadLocalConfig, writeLocalConfig } from '../../utils/tools'
 import moment from 'moment'
+import { Info } from '../../utils/dialog'
 
 export default {
   data () {
     return {
       server: Window.$WebSocket,
       screenFullFlag: false,
+      thisWindow: null,
       preVol: 100,
       vols: 100,
       playStatus: true,
@@ -109,6 +111,7 @@ export default {
       menuX: 0,
       menuY: 0,
       logs: [],
+      showLogs: false,
       remoteVideo: new MediaStream(),
       RTCConnection: new RTCPeerConnection(),
       RTCConfigure: {
@@ -152,7 +155,9 @@ export default {
   },
   mounted () {
     this.server.TempGetInfoCallback = (data) => {
+      this.thisWindow = require('@electron/remote').getCurrentWindow()
       this.server.On('RoomEntered', this.handleRoomEnter)
+      this.server.On('RoomVanish', this.handleRoomVanish)
       this.server.Emit('RoomEntered', { id: this.$route.query.id })
     }
     const timeout = 1500
@@ -214,6 +219,17 @@ export default {
     toolbarActiveChange () {
       this.toolbarActive = true
       this.activeChangeCounter = 0
+    },
+    reconnect () {
+      this.server.Emit('Leave', {})
+      this.remoteVideo.getTracks().forEach(x => this.remoteVideo.removeTrack(x))
+      this.RTCConnection.close()
+      this.RTCConnection.ontrack = null
+      this.RTCConnection.onicecandidate = null
+      this.writeLog('主动放弃连接成功，开始重新请求连接')
+
+      this.RTCConnection = new RTCPeerConnection(this.RTCConfigure)
+      this.server.Emit('RoomEntered', { id: this.$route.query.id })
     },
     showMenu (e) {
       e.preventDefault()
@@ -280,6 +296,12 @@ export default {
         this.writeLog('向远程方发送连接请求...')
         this.server.Emit('Offer', { offer: 'plz' })
       }
+    },
+    handleRoomVanish () {
+      console.log('Receive room exit')
+      Info('与房主断开连接，点击确定返回房间列表', '连接中断').then(() => {
+        this.thisWindow.close()
+      })
     },
     async OnOffer (data) {
       console.log('offer ', data)

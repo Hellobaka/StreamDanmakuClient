@@ -11,7 +11,7 @@ const SALT = 'I AM FW'
 
 const isDev = !app.isPackaged
 const appRoot = isDev ? path.resolve(__dirname, '..', '..') : path.resolve(app.getAppPath(), '..', '..')
-const userDataPath = path.resolve('E:\\Code\\webrtc-client\\dist_electron', 'userData')
+const userDataPath = path.resolve('E:\\Code\\webrtc-client\\dist_electron', isDev ? 'userData' : 'userData2')
 const loginConfigPath = path.resolve(userDataPath, 'Config.json')
 const userPath = app.getPath('userData')
 
@@ -24,14 +24,16 @@ export function md5Encrypt (msg) {
   return md5(msg)
 }
 export function writeLocalConfig (section, key, value, isLoginConfig = false) {
-  const path = isLoginConfig ? loginConfigPath : getUserConfigPath()
-  if (fs.existsSync(path)) {
-    const mainConfig = fs.readJSONSync(path)
+  console.log('write config: ', section, key, value)
+  const configPath = isLoginConfig ? loginConfigPath : getUserConfigPath()
+  fs.ensureDir(path.dirname(configPath))
+  if (fs.existsSync(configPath)) {
+    const mainConfig = fs.readJSONSync(configPath)
     if (!mainConfig[section]) mainConfig[section] = {}
     mainConfig[section][key] = value
-    fs.writeJSONSync(path, mainConfig)
+    fs.writeJSONSync(configPath, mainConfig)
   } else {
-    fs.writeJSONSync(path, {})
+    fs.writeJSONSync(configPath, {})
   }
 }
 let routerSave = null
@@ -88,7 +90,7 @@ export function getTemplateConfig () {
       password: ''
     },
     Config: {
-      themeColor: '',
+      themeColor: '#3f51b5',
       bitrate_Stream: 9000,
       framerate_Stream: 60,
       bitrate_Client: 9000,

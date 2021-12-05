@@ -42,8 +42,8 @@
     </v-main>
     <v-footer ref="footer" style="display:flex; padding:10px;" class="halfTransplant" elevation="10">
       <span style="margin-right: 10px;">弹幕: {{danmukuCount}}条</span>
-      <span style="margin-right: 10px;">网络上行: {{networkUpload}} KB/s</span>
-      <span>码率: {{bitRate}} KB/s</span>
+      <span style="margin-right: 10px;">网络上行: {{networkUpload}}</span>
+      <span>码率: {{bitRate}}</span>
       <v-spacer></v-spacer>
       <v-btn>推流预览</v-btn>
     </v-footer>
@@ -68,7 +68,7 @@ export default {
       serverDelay: 0,
       serverConnected: false,
       danmukuList: [],
-      networkUpload: 0,
+      totalUpload: 0,
       bitRate: 0,
       server: Window.$WebSocket,
       tray: null,
@@ -101,6 +101,9 @@ export default {
     },
     danmukuCount: function () {
       return this.danmukuList.filter(x => !x.log).length
+    },
+    networkUpload: function () {
+      return this.totalUpload === 0 ? this.speedParse(this.bitRate) : this.speedParse(this.totalUpload)
     }
   },
   beforeDestroy () {
@@ -202,7 +205,7 @@ export default {
       this.server.On('Offer', this.sendOffer)
       this.server.On('Answer', this.sendAnswer)
       this.server.On('Candidate', this.sendCandidate)
-      this.server.On('Leave', this.sendOffer)
+      this.server.On('Leave', this.sendLeave)
 
       if (this.config.stunServer) this.RTCConfigure.iceServers[0].urls = this.config.stunServer
       if (this.config.turnServer) {
@@ -214,29 +217,32 @@ export default {
           this.RTCConfigure.iceServers[serverLength].urls = result[2]
         }
       }
-      setInterval(() => {
-        this.RTCConnectionList.forEach(async connection => {
-          connection.getStats(null).then(result => {
-            result.forEach((report) => {
-              const now = report.timestamp
-              let bitrate
-              if (report.type === 'outbound-rtp' && report.mediaType === 'video') {
-                const bytes = report.bytesSent
-                if (this.timestampPrev) {
-                  bitrate = (bytes - this.bytesPrev) / (now - this.timestampPrev)
-                  bitrate = Math.floor(bitrate)
-                }
-                this.bytesPrev = bytes
-                this.timestampPrev = now
-              }
-              if (bitrate) {
-                this.bitRate = this.speedParse(bitrate)
-                this.networkUpload = this.speedParse(this.onlineCount * bitrate)
-              }
-            })
-          })
-        })
-      }, 1000)
+      // setInterval(() => {
+      //   this.totalUpload = 0
+      //   let maxRate = 0
+      //   this.RTCConnectionList.forEach(connection => {
+      //     connection.getStats(null).then(result => {
+      //       result.forEach((report) => {
+      //         const now = report.timestamp
+      //         let bitrate
+      //         if (report.type === 'outbound-rtp' && report.mediaType === 'video') {
+      //           const bytes = report.bytesSent
+      //           if (this.timestampPrev) {
+      //             bitrate = (bytes - this.bytesPrev) / (now - this.timestampPrev)
+      //             bitrate = Math.floor(bitrate)
+      //           }
+      //           this.bytesPrev = bytes
+      //           this.timestampPrev = now
+      //         }
+      //         if (bitrate && bitrate > 0) {
+      //           maxRate = Math.max(bitrate, maxRate)
+      //           this.bitRate = this.speedParse(maxRate)
+      //           this.totalUpload += bitrate
+      //         }
+      //       })
+      //     })
+      //   })
+      // }, 1000)
       this.writeLog('初始化完成')
 
       // this.RTCConnectionList.push(new RTCPeerConnection(this.RTCConfigure))
@@ -253,9 +259,9 @@ export default {
       if (speed < 1024) {
         return `${speed} KB/s`
       } else if (speed > 1024 && speed < 1024 * 1024) {
-        return `${speed / 1024} MB/s`
+        return `${Math.round(speed / 1024 * 100) / 100} MB/s`
       } else {
-        return `${speed / 1024 / 1024} GB/s`
+        return `${Math.round(speed / 1024 / 1024 * 100) / 100} GB/s`
       }
     },
     setTopMost () {
@@ -378,6 +384,7 @@ export default {
         PeerConnection.ontrack = null
         PeerConnection.onicecandidate = null
         this.RTCConnectionList.delete(data.from)
+        this.onlineCount--
       } else {
         // ?
       }
