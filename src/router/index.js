@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
+import { readSessionStorage } from '../utils/tools'
 // import { readSessionStorage } from '../utils/tools'
 
 Vue.use(VueRouter)
@@ -47,18 +48,31 @@ const routes = [
         component: () => import('../views/Streamer/Server.vue')
       }
     ]
-  }
+  },
+  {
+    path: '/404',
+    component: () => import('@/views/404'),
+    hidden: true
+  },
+  { path: '*', redirect: '/404', hidden: true }
 ]
 
 const router = new VueRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   document.title = `${to.name} - webrtc-client`
-  next()
-  // if (to.name !== '登录' && !readSessionStorage('LoginFlag')) next({ name: '登录' })
-  // else next()
+  const hasUser = await readSessionStorage('user')
+  if (to.path === '/login' || from.path === '/login') next()
+  if (!hasUser) {
+    const server = Window.$WebSocket
+    server.TempGetInfoCallback = () => {
+      next()
+    }
+  } else {
+    next()
+  }
 })
 
 export default router
