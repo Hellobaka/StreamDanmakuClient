@@ -6,10 +6,19 @@ const { readSessionStorage, writeSessionStorage, loadLocalConfig, routerJump, wr
 
 Window.$WebSocket = { connection: new WebSocket(url) }
 const server = Window.$WebSocket
+init()
+
 const onList = []
-server.connection.onopen = (e) => {
+server.connection.onopen = async (e) => {
   console.log('Connected to Server.')
-  init()
+  // await writeSessionStorage('user', null)
+  if (await readSessionStorage('StreamFlag')) {
+    Emit('GetInfo', { loginFlag: true, jwt: loadLocalConfig('JWT').token, streamFlag: true })
+  } else if (await readSessionStorage('LoginFlag')) {
+    Emit('GetInfo', { loginFlag: true, jwt: loadLocalConfig('JWT').token })
+  } else {
+    Emit('GetInfo', { loginFlag: false })
+  }
 }
 function reconnect () {
   reconnectCount++
@@ -56,21 +65,6 @@ server.delay = 0
 server.On('HeartBeat', (data) => {
   server.delay = Math.abs(new Date().getTime() - parseInt(data.timestamp) + 28800000)
 })
-server.On('SocketID', async (data) => {
-  console.log('getSocketID: ', data)
-  await writeSessionStorage('SocketID', data)
-})
-server.On('GetInfo', async (data) => {
-  await writeSessionStorage('user', null)
-  // writeSessionStorage('LoginFlag', false)
-  if (await readSessionStorage('StreamFlag')) {
-    Emit('GetInfo', { loginFlag: true, jwt: loadLocalConfig('JWT').token, streamFlag: true })
-  } else if (await readSessionStorage('LoginFlag')) {
-    Emit('GetInfo', { loginFlag: true, jwt: loadLocalConfig('JWT').token })
-  } else {
-    Emit('GetInfo', { loginFlag: false })
-  }
-})
 server.On('GetInfoResult', async (data) => {
   console.log('InfoResult: ', data)
   if (data.code !== 200) {
@@ -85,9 +79,6 @@ server.On('GetInfoResult', async (data) => {
       await writeSessionStorage('user', data.data)
       await writeSessionStorage('LoginFlag', true)
       writeLocalConfig('Session', 'UserID', data.data.Id, true)
-    } else {
-      await writeSessionStorage('user', null)
-      await writeSessionStorage('LoginFlag', false)
     }
     server.TempGetInfoCallback(data)
     server.TempGetInfoCallback = (data) => {}

@@ -109,7 +109,9 @@
 import moment from 'moment'
 import NewRoom from '../components/NewRoom.vue'
 import RoomPassword from '../components/RoomPassword.vue'
+// eslint-disable-next-line no-unused-vars
 import { Info } from '../utils/dialog'
+// eslint-disable-next-line no-unused-vars
 import { loadLocalConfig, readSessionStorage, routerJump } from '../utils/tools'
 import { createChildWindow } from '../utils/windowsHelper'
 export default {
@@ -210,6 +212,7 @@ export default {
           this.roomList.forEach(x => {
             x.time = moment(x.CreateTime).format('yyyy-MM-DD HH:mm:ss')
           })
+          this.snackbar.Success('获取房间列表成功')
         } else {
           this.snackbar.Error(data.msg)
         }
@@ -223,17 +226,23 @@ export default {
   },
   mounted () {
     this.config = loadLocalConfig('Config')
-    // writeSessionStorage('Config', this.config)
     if (this.config && this.config.themeColor) {
       this.$vuetify.theme.themes.light.primary = this.config.themeColor
     }
     console.log('Load Local Config Success.')
-    readSessionStorage('user').then(async data => {
-      this.user = data
-      if (!this.user || !await readSessionStorage('LoginFlag')) {
-        Info('登录失效，点击重新登录').then(() => { routerJump(this.$router, './', true) })
+    this.getRoomList()
+    this.server.On('RoomAdd', (data) => {
+      const room = data.data
+      this.roomList.push(room)
+    })
+    this.server.On('RoomRemove', (data) => {
+      const room = data.data.RoomID
+      for (const item in this.roomList) {
+        if (item.RoomID === room) {
+          this.roomList.splice(this.roomList.indexOf(item), 1)
+          break
+        }
       }
-      this.getRoomList()
     })
   }
 }

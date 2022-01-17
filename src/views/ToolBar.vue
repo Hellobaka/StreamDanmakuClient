@@ -51,7 +51,7 @@
 <script>
 import UserCenter from '../components/UserCenter.vue'
 import GlobalSetting from '../components/GlobalSetting.vue'
-const { readSessionStorage, writeSessionStorage } = require('../utils/tools')
+const { readSessionStorage } = require('../utils/tools')
 export default {
   name: 'ToolBar',
   components: {
@@ -79,8 +79,8 @@ export default {
   },
   async mounted () {
     this.$vuetify.theme.themes.light.primary = '#3f51b5'
-    await writeSessionStorage('LoginFlag', false)
-    await writeSessionStorage('user', null)
+    // await writeSessionStorage('LoginFlag', false)
+    // await writeSessionStorage('user', null)
     // this.config = loadLocalConfig('Config')
     // // writeSessionStorage('Config', this.config)
     // if (this.config && this.config.themeColor) {
