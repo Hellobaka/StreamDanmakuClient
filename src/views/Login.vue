@@ -13,13 +13,15 @@
       :disabled="formSend"
       @keyup="checkEnterKey($event)"
     ></v-text-field>
-    <div style="display: flex;">
+    <div style="display: flex; align-items:center;">
       <v-switch v-model="loginConfig.rememberPassword" label="记住密码" style="margin-right: 2vw;" @change="loginConfigChange('RememberPassword')"></v-switch>
       <v-switch v-model="loginConfig.autoLogin" label="自动登录" @change="loginConfigChange('AutoLogin')"></v-switch>
+      <v-btn :loading="formSend" @click="$router.push('./forgetpwd')" style="margin-left: 10px;">找回密码</v-btn>
     </div>
+
     <v-container style="display: flex;justify-content: space-around">
-      <v-btn color="primary" :loading="formSend" @click="login">登录</v-btn>
-      <v-btn color="plain" :loading="formSend" @click="$router.push('./register')">注册</v-btn>
+      <v-btn color="primary" :loading="formSend" @click="login" width="200px">登录</v-btn>
+      <v-btn color="plain" :loading="formSend" @click="$router.push('./register')" width="200px">注册</v-btn>
     </v-container>
   </v-container>
 </template>
