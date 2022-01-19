@@ -1,18 +1,29 @@
 <template>
   <div data-app="true">
-    <v-list subheader two-line>
+    <v-list subheader two-line style="position: relative;">
       <v-subheader inset>
         当前共有公开房间{{ roomList.length }}个
-        <v-btn icon @click="getRoomList"><v-icon>mdi-refresh</v-icon></v-btn>
-        <v-btn icon @click="createServerWin"><v-icon>mdi-plus</v-icon></v-btn>
+      <v-tooltip top>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn v-on="on" v-bind="attrs" icon @click="getRoomList"><v-icon>mdi-refresh</v-icon></v-btn>
+        </template>
+        <span>刷新列表</span>
+      </v-tooltip>
+      <v-tooltip top>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn v-on="on" v-bind="attrs" icon @click="createServerWin"><v-icon>mdi-plus</v-icon></v-btn>
+        </template>
+        <span>加入房间</span>
+      </v-tooltip>
       </v-subheader>
       <v-list-item>
-        <v-text-field v-model="filter.keyword" label="搜索" solo prepend-inner-icon="mdi-magnify" hide-details clearable></v-text-field>
+        <v-text-field v-model="filter.keyword" label="搜索" solo prepend-inner-icon="mdi-magnify" hide-details clearable @click:clear="filter.keyword=''"></v-text-field>
       </v-list-item>
       <v-list-item class="text-center">
-        <v-chip class="ma-1" :color="filter.isPublic?'primary':'default'" @click="filterChange('isPublic')">公开</v-chip>
-        <v-chip class="ma-1" :color="filter.passwordNeeded?'primary':'default'" @click="filterChange('passwordNeeded')">无密码</v-chip>
-        <v-chip class="ma-1" :color="filter.passwordNeeded?'default':'primary'" @click="filterChange('passwordNeeded')">有密码</v-chip>
+        <v-chip class="ma-1" :color="filter.passwordNeeded?'default':'primary'" @click="filterChange('passwordNeeded')">无密码</v-chip>
+        <v-chip class="ma-1" :color="filter.passwordNeeded?'primary':'default'" @click="filterChange('passwordNeeded')">有密码</v-chip>
+        <v-chip class="ma-1" :color="filter.onTime?'primary':'default'" @click="filterChange('onTime')">按创建时间{{filter.onTimeDesc?'晚':'早'}}</v-chip>
+        <v-chip class="ma-1" :color="filter.onID?'primary':'default'" @click="filterChange('onID')">按房间号{{filter.onIDDesc?'大':'小'}}</v-chip>
       </v-list-item>
       <v-list-item
         v-for="item in filterList"
@@ -42,60 +53,25 @@
         </v-list-item-action>
       </v-list-item>
     </v-list>
-    <v-speed-dial
-      v-model="fab"
-      bottom
-      right
-      direction="left"
-      open-on-hover
-      transition="slide-x-reverse-transition"
-    >
-      <template v-slot:activator>
-        <v-btn
-          v-model="fab"
-          color="primary"
-          dark
-          fab
-        >
-          <v-icon v-if="fab">
-            mdi-close
-          </v-icon>
-          <v-icon v-else>
-            mdi-plus
-          </v-icon>
-        </v-btn>
-      </template>
-      <v-tooltip top v-model="tipFilterShow" attach="#tipFilter">
-        过滤
-      </v-tooltip>
-      <v-btn
-        id="tipFilter"
-        color="primary"
-        fab
-        dark
-        small
-        @mouseover="tipFilterShow = true"
-        @mouseleave="tipFilterShow = false"
-        @click="callFilter"
-      >
-        <v-icon>mdi-filter-variant</v-icon>
-      </v-btn>
-      <v-tooltip top v-model="tipNewShow" attach="#tipNew">
-        新建
-      </v-tooltip>
+    <v-tooltip top>
+      <template v-slot:activator="{ on, attrs }">
       <v-btn
         id="tipNew"
         color="green"
         fab
         dark
-        small
+        v-on="on"
+        v-bind="attrs"
         @mouseover="tipNewShow = true"
         @mouseleave="tipNewShow = false"
         @click="callNewRoom"
+        style="position:absolute;right:20px;bottom:20px;"
       >
         <v-icon>mdi-plus-box-outline</v-icon>
       </v-btn>
-    </v-speed-dial>
+      </template>
+      <span>新建房间</span>
+    </v-tooltip>
     <v-dialog v-model="newRoomDialog">
       <NewRoom @onDialogClose="newRoomDialog=false" v-if="newRoomDialog"></NewRoom>
     </v-dialog>
@@ -142,7 +118,10 @@ export default {
       roomList: [],
       filter: {
         keyword: '',
-        isPublic: true,
+        onTime: false,
+        onTimeDesc: false,
+        onID: false,
+        onIDDesc: false,
         passwordNeeded: false
       }
     }
@@ -150,7 +129,25 @@ export default {
   computed: {
     filterList: function () {
       const key = this.filter.keyword
-      return this.roomList.filter(x => x.Title.contain(key) || x.RoomID.toString().contain(key) || x.CreatorName.contain(key)).filter(x => x.IsPublic === this.filter.isPublic && x.PasswordNeeded === this.filter.passwordNeeded)
+      let filterArray = this.roomList
+      if (key !== null) {
+        filterArray = filterArray.filter(x => x.Title.contain(key) || x.RoomID.toString().contain(key) || x.CreatorName.contain(key))
+      }
+      filterArray = filterArray.filter(x => x.PasswordNeeded === this.filter.passwordNeeded)
+      if (this.filter.onTime) {
+        if (this.filter.onTimeDesc) {
+          filterArray.sort((a, b) => a.time < b.time ? 1 : -1)
+        } else {
+          filterArray.sort((a, b) => a.time > b.time ? 1 : -1)
+        }
+      } else if (this.filter.onID) {
+        if (this.filter.onIDDesc) {
+          filterArray.sort((a, b) => a.RoomID < b.RoomID ? 1 : -1)
+        } else {
+          filterArray.sort((a, b) => a.RoomID > b.RoomID ? 1 : -1)
+        }
+      }
+      return filterArray
     }
   },
   methods: {
@@ -223,11 +220,37 @@ export default {
       createChildWindow('streamer/server', false)
     },
     filterChange (label) {
-      this.filter[label] = !this.filter[label]
-      this.updateResult()
-    },
-    updateResult () {
-
+      switch (label) {
+        case 'passwordNeeded':
+          this.filter[label] = !this.filter[label]
+          break
+        case 'onTime':
+          if (this.filter.onTime) {
+            if (this.filter.onTimeDesc) {
+              this.filter.onTimeDesc = false
+              this.filter.onTime = false
+            } else {
+              this.filter.onTimeDesc = true
+            }
+          } else {
+            this.filter.onTime = true
+          }
+          break
+        case 'onID':
+          if (this.filter.onID) {
+            if (this.filter.onIDDesc) {
+              this.filter.onIDDesc = false
+              this.filter.onID = false
+            } else {
+              this.filter.onIDDesc = true
+            }
+          } else {
+            this.filter.onID = true
+          }
+          break
+        default:
+          break
+      }
     }
   },
   mounted () {
@@ -248,9 +271,9 @@ export default {
     })
     this.server.On('RoomRemove', (data) => {
       const room = data.roomID
-      for (const item in this.roomList) {
+      console.log(this.roomList)
+      for (const item of this.roomList) {
         if (item.RoomID === room) {
-          console.log(item)
           this.roomList.splice(this.roomList.indexOf(item), 1)
           break
         }
