@@ -64,7 +64,7 @@ const router = new VueRouter({
 router.beforeEach(async (to, from, next) => {
   document.title = `${to.name} - webrtc-client`
   const hasUser = await readSessionStorage('user')
-  if (to.path === '/login' || from.path === '/login') next()
+  if (to.path === '/login') next()
   if (!hasUser) {
     const server = Window.$WebSocket
     server.TempGetInfoCallback = () => {

@@ -6,8 +6,16 @@
         <v-btn icon @click="getRoomList"><v-icon>mdi-refresh</v-icon></v-btn>
         <v-btn icon @click="createServerWin"><v-icon>mdi-plus</v-icon></v-btn>
       </v-subheader>
+      <v-list-item>
+        <v-text-field v-model="filter.keyword" label="搜索" solo prepend-inner-icon="mdi-magnify" hide-details clearable></v-text-field>
+      </v-list-item>
+      <v-list-item class="text-center">
+        <v-chip class="ma-1" :color="filter.isPublic?'primary':'default'" @click="filterChange('isPublic')">公开</v-chip>
+        <v-chip class="ma-1" :color="filter.passwordNeeded?'primary':'default'" @click="filterChange('passwordNeeded')">无密码</v-chip>
+        <v-chip class="ma-1" :color="filter.passwordNeeded?'default':'primary'" @click="filterChange('passwordNeeded')">有密码</v-chip>
+      </v-list-item>
       <v-list-item
-        v-for="item in roomList"
+        v-for="item in filterList"
         :key="item.CreatorName"
         @dblclick="roomClick(item.RoomID)"
         @click="signalClickHandle"
@@ -30,7 +38,7 @@
           </v-dialog>
         </v-list-item-content>
         <v-list-item-action>
-          <span style="color: gray;">房间：{{item.ClientCount}}/{{item.Max==-1?'∞':item.Max}}</span>
+          <span style="color: gray;">房间: {{item.ClientCount}}/{{item.Max==-1?'∞':item.Max}}</span>
         </v-list-item-action>
       </v-list-item>
     </v-list>
@@ -131,27 +139,18 @@ export default {
       selectRoomPassword: '',
       formSend: true,
       server: Window.$WebSocket,
-      roomList: []
-      // roomList: [
-      //   {
-      //     id: 1,
-      //     creator: '666',
-      //     title: 'testRoom',
-      //     time: '2021-11-18 13:46:02',
-      //     passwordNeeded: false,
-      //     personCount: 10,
-      //     max: 30
-      //   },
-      //   {
-      //     id: 2,
-      //     creator: '666777',
-      //     title: 'testRoom-2',
-      //     time: '2021-11-18 10:46:02',
-      //     passwordNeeded: true,
-      //     personCount: 114514,
-      //     max: -1
-      //   }
-      // ]
+      roomList: [],
+      filter: {
+        keyword: '',
+        isPublic: true,
+        passwordNeeded: false
+      }
+    }
+  },
+  computed: {
+    filterList: function () {
+      const key = this.filter.keyword
+      return this.roomList.filter(x => x.Title.contain(key) || x.RoomID.toString().contain(key) || x.CreatorName.contain(key)).filter(x => x.IsPublic === this.filter.isPublic && x.PasswordNeeded === this.filter.passwordNeeded)
     }
   },
   methods: {
@@ -222,9 +221,20 @@ export default {
     },
     createServerWin () {
       createChildWindow('streamer/server', false)
+    },
+    filterChange (label) {
+      this.filter[label] = !this.filter[label]
+      this.updateResult()
+    },
+    updateResult () {
+
     }
   },
   mounted () {
+    // eslint-disable-next-line no-extend-native
+    String.prototype.contain = function (pattern) {
+      return this.indexOf(pattern) !== -1
+    }
     this.config = loadLocalConfig('Config')
     if (this.config && this.config.themeColor) {
       this.$vuetify.theme.themes.light.primary = this.config.themeColor
@@ -232,13 +242,15 @@ export default {
     console.log('Load Local Config Success.')
     this.getRoomList()
     this.server.On('RoomAdd', (data) => {
-      const room = data.data
+      const room = data
+      room.time = moment(room.CreateTime).format('yyyy-MM-DD HH:mm:ss')
       this.roomList.push(room)
     })
     this.server.On('RoomRemove', (data) => {
-      const room = data.data.RoomID
+      const room = data.roomID
       for (const item in this.roomList) {
         if (item.RoomID === room) {
+          console.log(item)
           this.roomList.splice(this.roomList.indexOf(item), 1)
           break
         }
