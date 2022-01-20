@@ -51,7 +51,9 @@
 <script>
 import UserCenter from '../components/UserCenter.vue'
 import GlobalSetting from '../components/GlobalSetting.vue'
-const { readSessionStorage } = require('../utils/tools')
+const { readSessionStorage, routerJump } = require('../utils/tools')
+const { Confirm } = require('../utils/dialog')
+
 export default {
   name: 'ToolBar',
   components: {
@@ -75,6 +77,12 @@ export default {
     },
     async OpenUserCenter () {
       if (await readSessionStorage('LoginFlag')) this.userCenterOn = true
+      else {
+        const res = await Confirm('暂未登录，是否前往登录页面？', '未登录')
+        if (res) {
+          routerJump(this.$router, './', true)
+        }
+      }
     }
   },
   async mounted () {
