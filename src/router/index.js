@@ -60,11 +60,15 @@ const routes = [
 const router = new VueRouter({
   routes
 })
-
+const whiteList = ['/login', '/register']
 router.beforeEach(async (to, from, next) => {
   document.title = `${to.name} - webrtc-client`
+  if (whiteList.includes(to.path)) {
+    next()
+    return
+  }
+
   const hasUser = await readSessionStorage('user')
-  if (to.path === '/login') next()
   if (!hasUser) {
     const server = Window.$WebSocket
     server.TempGetInfoCallback = () => {
