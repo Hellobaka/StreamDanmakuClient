@@ -7,29 +7,14 @@ const { readSessionStorage, writeSessionStorage, loadLocalConfig, routerJump, wr
 Window.$WebSocket = { connection: new WebSocket(url) }
 const server = Window.$WebSocket
 init()
-
+let streamFlag = null
 const onList = []
-server.connection.onopen = async (e) => {
-  console.log('Connected to Server.')
-  // await writeSessionStorage('user', null)
-  if (await readSessionStorage('StreamFlag')) {
-    Emit('GetInfo', { loginFlag: true, jwt: loadLocalConfig('JWT').token, streamFlag: true })
-  } else if (await readSessionStorage('LoginFlag')) {
-    Emit('GetInfo', { loginFlag: true, jwt: loadLocalConfig('JWT').token })
-  } else {
-    Emit('GetInfo', { loginFlag: false })
-  }
-}
 function reconnect () {
   reconnectCount++
   console.log(`Try reconnect to Server, times: ${reconnectCount}`)
   setTimeout(() => {
     server.connection = new WebSocket(url)
     init()
-    server.connection.onopen = (e) => {
-      console.log('Reconnected to Server.')
-      reconnectCount = 0
-    }
   }, 2000)
 }
 function init () {
@@ -41,12 +26,25 @@ function init () {
       onList[json.type](json.data.msg)
     }
   }
-  server.connection.onclose = (e) => {
+  server.connection.onclose = async (e) => {
     console.log('Disconnect from Server.')
     reconnect()
   }
   server.connection.onerror = (e) => {
     console.log(`Connection Error, ${e}`)
+  }
+  server.connection.onopen = async (e) => {
+    reconnectCount = 0
+    if (!streamFlag) streamFlag = await readSessionStorage('StreamFlag')
+    console.log('Connected to Server.')
+    // await writeSessionStorage('user', null)
+    if (streamFlag) {
+      Emit('GetInfo', { loginFlag: true, jwt: loadLocalConfig('JWT').token, streamFlag: true })
+    } else if (await readSessionStorage('LoginFlag')) {
+      Emit('GetInfo', { loginFlag: true, jwt: loadLocalConfig('JWT').token })
+    } else {
+      Emit('GetInfo', { loginFlag: false })
+    }
   }
 }
 function Emit (type, msg) {
