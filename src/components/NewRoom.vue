@@ -8,12 +8,14 @@
           v-model="title"
           :disabled="formSend"
           :rules="rules.required"
+          @keydown.enter="createRoom"
         ></v-text-field>
         <v-switch v-model="isPublic" label="房间是否公开"></v-switch>
         <v-text-field
           label="房间密码"
           v-model="password"
           :disabled="formSend"
+          @keydown.enter="createRoom"
         ></v-text-field>
         <v-subheader class="pl-0">
           房间人数上限: {{ max == 51 ? '∞' : max }}
