@@ -2,7 +2,7 @@
   <div data-app="true">
     <v-list subheader two-line style="position: relative;">
       <v-subheader inset>
-        当前共有公开房间{{ roomList.length }}个
+        当前共有公开房间{{ roomList.length }}个 在线人数{{ onlineUserCount }}
       <v-tooltip top>
         <template v-slot:activator="{ on, attrs }">
           <v-btn v-on="on" v-bind="attrs" icon @click="getRoomList"><v-icon>mdi-refresh</v-icon></v-btn>
@@ -11,7 +11,10 @@
       </v-tooltip>
       <v-tooltip top>
         <template v-slot:activator="{ on, attrs }">
-          <v-btn v-on="on" v-bind="attrs" icon @click="createServerWin"><v-icon>mdi-plus</v-icon></v-btn>
+          <v-btn v-on="on" v-bind="attrs" icon @click="joinRoomDialog=true"><v-icon>mdi-plus</v-icon></v-btn>
+          <v-dialog max-width="500" persistent v-model="joinRoomDialog">
+            <JoinRoom @onDialogClose="closeJoinRoom" v-if="joinRoomDialog"></JoinRoom>
+          </v-dialog>
         </template>
         <span>加入房间</span>
       </v-tooltip>
@@ -20,8 +23,8 @@
         <v-text-field v-model="filter.keyword" label="搜索" solo prepend-inner-icon="mdi-magnify" hide-details clearable @click:clear="filter.keyword=''"></v-text-field>
       </v-list-item>
       <v-list-item class="text-center">
-        <v-chip class="ma-1" :color="filter.passwordNeeded?'default':'primary'" @click="filterChange('passwordNeeded')">无密码</v-chip>
-        <v-chip class="ma-1" :color="filter.passwordNeeded?'primary':'default'" @click="filterChange('passwordNeeded')">有密码</v-chip>
+        <v-chip class="ma-1" :color="filter.withoutPassword?'primary':'default'" @click="filterChange('withoutPassword')">无密码</v-chip>
+        <v-chip class="ma-1" :color="filter.withPassword?'primary':'default'" @click="filterChange('withPassword')">有密码</v-chip>
         <v-chip class="ma-1" :color="filter.onTime?'primary':'default'" @click="filterChange('onTime')">按创建时间{{filter.onTimeDesc?'晚':'早'}}</v-chip>
         <v-chip class="ma-1" :color="filter.onID?'primary':'default'" @click="filterChange('onID')">按房间号{{filter.onIDDesc?'大':'小'}}</v-chip>
       </v-list-item>
@@ -93,6 +96,7 @@
 import moment from 'moment'
 import NewRoom from '../components/NewRoom.vue'
 import RoomPassword from '../components/RoomPassword.vue'
+import JoinRoom from '../components/JoinRoom.vue'
 // eslint-disable-next-line no-unused-vars
 import { Info } from '../utils/dialog'
 // eslint-disable-next-line no-unused-vars
@@ -101,7 +105,8 @@ import { createChildWindow } from '../utils/windowsHelper'
 export default {
   components: {
     NewRoom,
-    RoomPassword
+    RoomPassword,
+    JoinRoom
   },
   data () {
     return {
@@ -111,18 +116,21 @@ export default {
       filterDialog: false,
       newRoomDialog: false,
       passwordDialog: false,
+      joinRoomDialog: false,
       selectRoomID: 0,
       selectRoomPassword: '',
       formSend: true,
       server: Window.$WebSocket,
       roomList: [],
+      onlineUserCount: 0,
       filter: {
         keyword: '',
         onTime: false,
         onTimeDesc: false,
         onID: false,
         onIDDesc: false,
-        passwordNeeded: false
+        withoutPassword: false,
+        withPassword: false
       }
     }
   },
@@ -133,7 +141,11 @@ export default {
       if (key !== null) {
         filterArray = filterArray.filter(x => x.Title.contain(key) || x.RoomID.toString().contain(key) || x.CreatorName.contain(key))
       }
-      filterArray = filterArray.filter(x => x.PasswordNeeded === this.filter.passwordNeeded)
+      if (this.filter.withPassword) {
+        filterArray = filterArray.filter(x => x.PasswordNeeded === true)
+      } else if (this.filter.withoutPassword) {
+        filterArray = filterArray.filter(x => x.PasswordNeeded === false)
+      }
       if (this.filter.onTime) {
         if (this.filter.onTimeDesc) {
           filterArray.sort((a, b) => a.time < b.time ? 1 : -1)
@@ -221,8 +233,13 @@ export default {
     },
     filterChange (label) {
       switch (label) {
-        case 'passwordNeeded':
-          this.filter[label] = !this.filter[label]
+        case 'withPassword':
+          this.filter.withPassword = !this.filter.withPassword
+          if (this.filter.withPassword) this.filter.withoutPassword = false
+          break
+        case 'withoutPassword':
+          this.filter.withoutPassword = !this.filter.withoutPassword
+          if (this.filter.withoutPassword) this.filter.withPassword = false
           break
         case 'onTime':
           if (this.filter.onTime) {
@@ -251,6 +268,14 @@ export default {
         default:
           break
       }
+    },
+    closeJoinRoom (data) {
+      console.log(data)
+      this.joinRoomDialog = false
+      if (data.result) {
+        this.selectRoomPassword = data.password
+        this.enterRoom(data.id)
+      }
     }
   },
   mounted () {
@@ -264,6 +289,12 @@ export default {
     }
     console.log('Load Local Config Success.')
     this.getRoomList()
+    this.server.On('OnlineUserCount', data => {
+      this.onlineUserCount = data.count
+    })
+    this.server.On('OnlineUserChange', data => {
+      this.onlineUserCount = data.count
+    })
     this.server.On('RoomAdd', (data) => {
       const room = data
       room.time = moment(room.CreateTime).format('yyyy-MM-DD HH:mm:ss')
@@ -279,6 +310,7 @@ export default {
         }
       }
     })
+    this.server.Emit('OnlineUserCount', '')
   }
 }
 </script>
