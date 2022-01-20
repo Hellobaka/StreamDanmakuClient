@@ -1,7 +1,7 @@
 <template>
   <v-app id="frameMain">
     <v-app-bar app dense class="draggable" id="toolBar" ref="header">
-      <span style="font-size: 15px;">房间: {{$route.query.id}} - {{onlineCount}}人在线 延时: {{serverDelay}} ms
+      <span style="font-size: 15px;">房间: {{roomInstance.RoomID}} - {{roomInstance.InviteCode}}
         <div :style="`margin-left: 10px;float:right;width: 20px; height: 20px; border: 1px solid white; border-radius: 50%; background-color: ${serverConnected?'green':'coral'}`"></div>
       </span>
       <v-spacer></v-spacer>
@@ -41,11 +41,12 @@
       </v-list>
     </v-main>
     <v-footer ref="footer" style="display:flex; padding:10px;" class="halfTransplant" elevation="10">
+      <span style="margin-right: 10px;">{{onlineCount}}人</span>
       <span style="margin-right: 10px;">弹幕: {{danmukuCount}}条</span>
       <span style="margin-right: 10px;">网络上行: {{networkUpload}}</span>
       <span>码率: {{bitRate}}</span>
       <v-spacer></v-spacer>
-      <v-btn>推流预览</v-btn>
+      <!-- <v-btn>推流预览</v-btn> -->
     </v-footer>
   </v-app>
 </template>
@@ -62,6 +63,7 @@ export default {
   data () {
     return {
       onlineCount: 0,
+      roomInstance: {},
       thisWindow: null,
       topMost: false,
       ignoreMouse: false,
@@ -133,6 +135,14 @@ export default {
         this.tray.destroy()
         this.tray = null
       }
+      this.server.On('RoomInfo', data => {
+        if (data.code !== 200) {
+          this.snackbar.Error(data.msg)
+        } else {
+          this.roomInstance = data.data
+        }
+      })
+      this.server.Emit('RoomInfo', '')
     }
     // this.tray = new Tray('src/public/main.ico')
 
@@ -187,7 +197,7 @@ export default {
     async init () {
       setInterval(() => {
         this.serverConnected = this.server.connection.readyState === 1
-        this.serverDelay = this.serverConnected ? this.server.delay : '∞'
+        // this.serverDelay = this.serverConnected ? this.server.delay : '∞'
       }, 100)
       const winW = screen.getPrimaryDisplay().workAreaSize.width
       const winH = screen.getPrimaryDisplay().workAreaSize.height
