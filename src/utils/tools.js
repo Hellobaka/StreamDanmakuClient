@@ -41,7 +41,7 @@ export function routerJump (router, path, replace = false) {
   if (router) routerSave = router
   else router = routerSave
 
-  if (!isDev && path === './') window.location.href = './index.html'
+  if (path === './') window.location.href = './index.html'
   else if (replace) router.replace({ path })
   else router.push(path)
 }
