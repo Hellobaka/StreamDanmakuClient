@@ -1,9 +1,11 @@
 'use strict'
 
 // eslint-disable-next-line no-unused-vars
-import { app, protocol, BrowserWindow, Menu } from 'electron'
-import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
-import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
+const { app, protocol, BrowserWindow, Menu } = require('electron')
+// alert(require('vue-cli-plugin-electron-builder').lib)
+const { createProtocol } = require('vue-cli-plugin-electron-builder/lib')
+// const installExtension, { VUEJS_DEVTOOLS } = require('electron-devtools-installer')
+
 const isDevelopment = process.env.NODE_ENV !== 'production'
 require('@electron/remote/main').initialize()
 // Scheme must be registered before the app is ready
@@ -68,7 +70,7 @@ app.on('ready', async () => {
   if (isDevelopment && !process.env.IS_TEST) {
     // Install Vue Devtools
     try {
-      await installExtension(VUEJS_DEVTOOLS)
+      // await installExtension(VUEJS_DEVTOOLS)
     } catch (e) {
       console.error('Vue Devtools failed to install:', e.toString())
     }

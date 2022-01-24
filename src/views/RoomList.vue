@@ -183,11 +183,26 @@ export default {
       }
     },
     enterRoom (id) {
+      const room = this.roomList.find(x => x.RoomID === id)
       this.formSend = true
       this.server.On('EnterRoom', (data) => {
         this.formSend = false
         if (data.code === 200) {
-          createChildWindow(`streamer/client?id=${id}`, true)
+          switch (room.Mode) {
+            case 1: // trtc
+              createChildWindow(`TRTC-streamer/client?id=${id}`, true)
+              break
+            case 0: // 普通快直播
+              createChildWindow(`txcloud-live-streamer/client?id=${id}`, true)
+              break
+            case 2: // 自搭
+              createChildWindow(`streamer/client?id=${id}`, true)
+              break
+            case 3: // 语音
+              break
+            default:
+              break
+          }
         } else {
           this.snackbar.Error(data.msg)
         }

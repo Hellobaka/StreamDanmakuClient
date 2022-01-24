@@ -51,6 +51,7 @@ export default {
       formSend: false,
       formPass: false,
       server: Window.$WebSocket,
+      mode: 1,
       max: 10,
       rules: {
         required: [
@@ -77,18 +78,31 @@ export default {
         this.formSend = false
         if (data.code === 200) {
           this.snackbar.Success('房间创建成功，进入推流界面……')
-          this.createServerWin()
+          this.createServerWin(this.mode)
           this.$emit('onDialogClose', true)
         } else {
           this.snackbar.Error(data.msg)
         }
       })
-      this.server.Emit('CreateRoom', { title: this.title, isPublic: this.isPublic, password: this.password, max: this.max })
+      this.server.Emit('CreateRoom', { title: this.title, isPublic: this.isPublic, password: this.password, max: this.max, mode: 0 })
     },
-    createServerWin () {
-      createChildWindow('streamer/server', false)
+    createServerWin (mode) {
+      switch (mode) {
+        case 0: // trtc
+          createChildWindow('TRTC-streamer/server', false)
+          break
+        case 1: // 普通快直播
+          createChildWindow('txcloud-live-streamer/server', false)
+          break
+        case 2: // 自搭
+          createChildWindow('streamer/server', false)
+          break
+        case 3: // 语音
+          break
+        default:
+          break
+      }
     }
-
   }
 }
 </script>
