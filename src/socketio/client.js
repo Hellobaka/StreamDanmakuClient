@@ -37,14 +37,18 @@ function init () {
     reconnectCount = 0
     if (!streamFlag) streamFlag = await readSessionStorage('StreamFlag')
     console.log('Connected to Server.')
-    // await writeSessionStorage('user', null)
-    if (streamFlag) {
-      Emit('GetInfo', { loginFlag: true, jwt: loadLocalConfig('JWT').token, streamFlag: true })
-    } else if (await readSessionStorage('LoginFlag')) {
+    if (!streamFlag && await readSessionStorage('LoginFlag')) {
       Emit('GetInfo', { loginFlag: true, jwt: loadLocalConfig('JWT').token })
     } else {
       Emit('GetInfo', { loginFlag: false })
     }
+    // await writeSessionStorage('user', null)
+  }
+}
+// eslint-disable-next-line no-unused-vars
+async function CallStreamGetInfo () {
+  if (streamFlag) {
+    Emit('GetInfo', { loginFlag: true, jwt: loadLocalConfig('JWT').token, streamFlag: true })
   }
 }
 function Emit (type, msg) {
@@ -58,6 +62,7 @@ function On (type, callback) {
 
 server.On = On
 server.Emit = Emit
+server.CallStreamGetInfo = CallStreamGetInfo
 server.user = {}
 server.delay = 0
 server.On('HeartBeat', (data) => {

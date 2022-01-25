@@ -84,7 +84,7 @@ export default {
           this.snackbar.Error(data.msg)
         }
       })
-      this.server.Emit('CreateRoom', { title: this.title, isPublic: this.isPublic, password: this.password, max: this.max, mode: 0 })
+      this.server.Emit('CreateRoom', { title: this.title, isPublic: this.isPublic, password: this.password, max: this.max, mode: 1 })
     },
     createServerWin (mode) {
       switch (mode) {

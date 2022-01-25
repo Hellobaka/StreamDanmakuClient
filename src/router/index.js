@@ -56,12 +56,12 @@ const routes = [
     children: [
       {
         path: 'client',
-        name: '客户端',
+        name: 'live-客户端',
         component: () => import('../views/Streamer/txcloud-live/Client.vue')
       },
       {
         path: 'server',
-        name: '推流端',
+        name: 'live-推流端',
         component: () => import('../views/Streamer/txcloud-live/Server.vue')
       }
     ]

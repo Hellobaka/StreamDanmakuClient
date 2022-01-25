@@ -4,7 +4,7 @@
       <div id="logs" v-if="showLogs">
         <p v-for="log in logs" :key="log.time">{{log.content}}</p>
       </div>
-      <div id="video-container" style="width:100%; height:auto;"></div>
+      <div id="video-container" style="width:100%; height:100%;"></div>
       <v-menu v-model="menu" :position-x="menuX" :position-y="menuY" absolute offset-y>
         <v-list dark style="background-color: rgba(100,100,100,.2);" ref="menuList">
           <v-list-item @click="playStatusChange">{{playStatus?'暂停': '播放'}}</v-list-item>
@@ -89,7 +89,7 @@
 import { loadLocalConfig, writeLocalConfig } from '@/utils/tools'
 import moment from 'moment'
 import { Info } from '@/utils/dialog'
-import TcPlayer from '@/utils/TcPlayer-module-2.4.1'
+const { TcPlayer } = require('@/utils/TcPlayer-module-2.4.1')
 export default {
   data () {
     return {
@@ -99,7 +99,7 @@ export default {
       preVol: 100,
       vols: 100,
       playStatus: true,
-      loading: true,
+      loading: false,
       toolbarActive: false,
       currentDanmuku: '',
       showDanmuku: true,
@@ -141,7 +141,6 @@ export default {
     }
   },
   mounted () {
-    this.videoContainer = document.querySelector('#video-container')
     this.server.TempGetInfoCallback = (data) => {
       this.thisWindow = require('@electron/remote').getCurrentWindow()
       this.server.On('RoomEntered', this.handleRoomEnter)
@@ -149,6 +148,8 @@ export default {
       this.server.On('RoomClose', this.handleRoomClose)
       this.server.Emit('RoomEntered', { id: this.$route.query.id })
     }
+    this.server.CallStreamGetInfo()
+    this.videoContainer = document.querySelector('#video-container')
     const timeout = 1500
     setInterval(() => {
       if (!this.toolbarActive || this.danmukuInputFlag) return
@@ -249,6 +250,7 @@ export default {
               webrtc: data.data.server + data.data.key,
               autoplay: true,
               controls: 'none',
+              volume: this.vols / 100,
               webrtcConfig: { streamType: 'auto' }
             })
             this.writeLog('播放器初始化成功，尝试播放...')
@@ -274,7 +276,7 @@ export default {
       })
     },
     volChange () {
-      this.videoPlayer.volume = this.vols / 100
+      this.videoPlayer.volume(this.vols / 100)
     }
   },
   beforeDestroy () {
@@ -283,7 +285,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 #danmukuSender {
   display: flex;
   width: 50%;
@@ -333,10 +335,12 @@ export default {
 .v-icon{
   color: white !important;
 }
-video {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+.vcp-player {
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
 }
 #videoContainer{
   background-color: black;
