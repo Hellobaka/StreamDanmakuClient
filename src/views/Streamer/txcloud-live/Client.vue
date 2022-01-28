@@ -246,19 +246,42 @@ export default {
         this.server.On('GetPullUrl', data => {
           if (data.code === 200) {
             this.writeLog('拉流地址获取成功')
+            const vueInstance = this
             this.videoPlayer = new TcPlayer('video-container', {
               webrtc: data.data.server + data.data.key,
               autoplay: true,
               controls: 'none',
-              volume: this.vols / 100,
-              webrtcConfig: { streamType: 'auto' }
+              // volume: this.vols / 100,
+              volume: 0,
+              webrtcConfig: { streamType: 'auto' },
+              listener: function (msg) {
+                switch (msg.type) {
+                  case 'loadeddata':
+                    vueInstance.writeLog('载入成功')
+                    break
+                  case 'error':
+                    vueInstance.writeLog('播放出现错误')
+                    break
+                  case 'play':
+                    vueInstance.writeLog('播放')
+                    break
+                  case 'pause':
+                    vueInstance.writeLog('暂停')
+                    break
+                  case 'playing':
+                    vueInstance.writeLog('开始播放...')
+                    this.el.style = 'width:100%;height:100%;'
+                    this.video.el.style = 'width:100%;height:100%;'
+                    break
+                }
+              }
             })
             this.writeLog('播放器初始化成功，尝试播放...')
           }
         })
         this.writeLog('房间加入成功')
         this.roomInstance = data.data.roomInfo
-        this.server.Emit('GetPullUrl', '')
+        this.server.Emit('GetPullUrl', { type: 1 })
       }
     },
     handleRoomVanish () {
@@ -315,7 +338,7 @@ export default {
   color: lightgray;
   z-index: 10;
   transition: .2s all linear;
-  /* background: rgba(100,100,100,.5); */
+  background: rgba(100,100,100,.5);
 }
 #logs::-webkit-scrollbar {
   width : 10px;
@@ -334,13 +357,6 @@ export default {
 }
 .v-icon{
   color: white !important;
-}
-.vcp-player {
-  video {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
 }
 #videoContainer{
   background-color: black;

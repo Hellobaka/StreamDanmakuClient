@@ -189,10 +189,10 @@ export default {
         this.formSend = false
         if (data.code === 200) {
           switch (room.Mode) {
-            case 1: // trtc
+            case 0: // trtc
               createChildWindow(`TRTC-streamer/client?id=${id}`, true)
               break
-            case 0: // 普通快直播
+            case 1: // 普通快直播
               createChildWindow(`txcloud-live-streamer/client?id=${id}`, true)
               break
             case 2: // 自搭

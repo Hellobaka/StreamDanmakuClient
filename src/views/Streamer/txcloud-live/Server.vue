@@ -43,8 +43,6 @@
     <v-footer ref="footer" style="display:flex; padding:10px;" class="halfTransplant" elevation="10">
       <span style="margin-right: 10px;">{{onlineCount}}人</span>
       <span style="margin-right: 10px;">弹幕: {{danmukuCount}}条</span>
-      <span style="margin-right: 10px;">网络上行: {{networkUpload}}</span>
-      <span>码率: {{bitRate}}</span>
       <v-spacer></v-spacer>
       <v-btn @click="switchRoomPublic">{{roomPublicFlag?'终止':'开始'}}直播</v-btn>
     </v-footer>
@@ -69,15 +67,12 @@ export default {
       serverDelay: 0,
       serverConnected: false,
       danmukuList: [],
-      totalUpload: 0,
-      bitRate: 0,
       server: Window.$WebSocket,
       tray: null,
       listHeight: 496,
       headerHeight: 0,
       footerHeight: 0,
       stateHandler: 0,
-      timestampPrev: 0,
       roomPublicFlag: false
     }
   },
@@ -87,9 +82,6 @@ export default {
     },
     danmukuCount: function () {
       return this.danmukuList.filter(x => !x.log).length
-    },
-    networkUpload: function () {
-      return this.totalUpload === 0 ? this.speedParse(this.bitRate) : this.speedParse(this.totalUpload)
     }
   },
   beforeDestroy () {
@@ -192,25 +184,14 @@ export default {
         }
         this.listHeight = totalHeight - this.headerHeight - this.footerHeight
       })
-      this.server.On('Leave', this.sendLeave)
-
-      // this.RTCConnectionList.push(new RTCPeerConnection(this.RTCConfigure))
-      // this.writeLog('已新建RTC连接, 等待连接...')
+      this.server.On('Leave', this.OnLeave)
+      this.server.On('Enter', this.OnEnter)
     },
     async closeWindow () {
       const res = await Confirm('确认要结束推流吗？', '提醒')
       if (res) {
         if (this.tray) this.tray.destroy()
         this.thisWindow.close()
-      }
-    },
-    speedParse (speed) {
-      if (speed < 1024) {
-        return `${speed} KB/s`
-      } else if (speed > 1024 && speed < 1024 * 1024) {
-        return `${Math.round(speed / 1024 * 100) / 100} MB/s`
-      } else {
-        return `${Math.round(speed / 1024 / 1024 * 100) / 100} GB/s`
       }
     },
     setTopMost () {
@@ -231,18 +212,13 @@ export default {
       this.thisWindow.setIgnoreMouseEvents(this.ignoreMouse, { forward: true })
       this.updateMenu()
     },
-    sendLeave (data) {
+    OnLeave (data) {
       console.log('receive leave', data)
-      if (this.RTCConnectionList.has(data.from)) {
-        const PeerConnection = this.RTCConnectionList.get(data.from)
-        PeerConnection.close()
-        PeerConnection.ontrack = null
-        PeerConnection.onicecandidate = null
-        this.RTCConnectionList.delete(data.from)
-        this.onlineCount--
-      } else {
-        // ?
-      }
+      this.onlineCount--
+    },
+    OnEnter (data) {
+      console.log('receive enter', data)
+      this.onlineCount++
     },
     async switchRoomPublic () {
       if (!this.roomPublicFlag) {

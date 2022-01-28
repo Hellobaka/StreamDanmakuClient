@@ -37,7 +37,9 @@ function init () {
     reconnectCount = 0
     if (!streamFlag) streamFlag = await readSessionStorage('StreamFlag')
     console.log('Connected to Server.')
-    if (!streamFlag && await readSessionStorage('LoginFlag')) {
+    if (streamFlag) {
+      Emit('GetInfo', { loginFlag: true, jwt: loadLocalConfig('JWT').token, streamFlag: true })
+    } else if (!streamFlag && await readSessionStorage('LoginFlag')) {
       Emit('GetInfo', { loginFlag: true, jwt: loadLocalConfig('JWT').token })
     } else {
       Emit('GetInfo', { loginFlag: false })
