@@ -2,7 +2,8 @@
   <div style="display: flex;height:100%;" @mousemove="toolbarActiveChange" data-app="true">
     <div id="videoContainer" @contextmenu="showMenu">
       <div id="logs" v-if="showLogs">
-        <p v-for="log in logs" :key="log.time">{{log.content}}</p>
+        <p v-for="log in logs" :key="log.id">{{log.content}}</p>
+        <p id="logBottom"></p>
       </div>
       <video id="video-container" style="width:100%; height:100%;"></video>
       <v-menu v-model="menu" :position-x="menuX" :position-y="menuY" absolute offset-y>
@@ -47,7 +48,7 @@
         </v-hover>
         <v-spacer></v-spacer>
         <div id="danmukuSender">
-          <input v-model="currentDanmuku" @keydown.enter="sendDanmuku" type="text" class="normalInput" @focus="inputOnFocus" @blur="inputOnBlur" ref="danmukuSender">
+          <input v-model="danmukuInput" @keydown.enter="sendDanmuku" type="text" class="normalInput" @focus="inputOnFocus" @blur="inputOnBlur" ref="danmukuSender">
           <v-tooltip top>
             <template v-slot:activator="{ on, attrs }">
               <v-btn @click="sendDanmuku" v-on="on" v-bind="attrs" :color="danmukuSenderColor" style="color: white;">{{danmukuSenderText}}</v-btn>
@@ -99,9 +100,9 @@ export default {
       preVol: 100,
       vols: 100,
       playStatus: true,
-      loading: false,
+      loading: true,
       toolbarActive: false,
-      currentDanmuku: '',
+      danmukuInput: '',
       showDanmuku: true,
       danmukuInputFlag: false,
       activeChangeCounter: 0,
@@ -111,9 +112,10 @@ export default {
       menuX: 0,
       menuY: 0,
       logs: [],
-      showLogs: false,
+      showLogs: true,
       roomInstance: {},
-      videoPlayer: null
+      videoPlayer: null,
+      catchFrameTimer: 0
     }
   },
   computed: {
@@ -218,7 +220,16 @@ export default {
     },
     writeLog (log) {
       if (!log) return
-      this.logs.push({ content: `[${moment().format('yyyy-MM-DD HH:mm:ss')}] ${log}`, time: new Date().getTime() })
+      if (!this.showLogs) {
+        setTimeout(() => {
+          this.showLogs = false
+        }, 2500)
+      }
+      this.showLogs = true
+      this.logs.push({ id: this.logs.length, content: `[${moment().format('yyyy-MM-DD HH:mm:ss')}] ${log}`, time: new Date().getTime() })
+      this.$nextTick(() => {
+        document.querySelector('#logBottom').scrollIntoView()
+      })
     },
     sendDanmuku () {
       if (this.danmukuCD) return
@@ -230,8 +241,8 @@ export default {
         if (this.danmukuCD === 0) return
         this.danmukuCD--
       }, 1000)
-      this.writeLog(this.currentDanmuku)
-      this.currentDanmuku = ''
+      this.writeLog(this.danmukuInput)
+      this.danmukuInput = ''
     },
     showDanmukuChange () {
       this.showDanmuku = !this.showDanmuku
@@ -247,17 +258,9 @@ export default {
           if (data.code === 200) {
             this.writeLog('拉流地址获取成功')
             if (flvjs.isSupported()) {
-              const videoElement = document.getElementById('video-container')
-              this.videoPlayer = flvjs.createPlayer({
-                type: 'flv',
-                url: data.data.server + data.data.key,
-                isLive: true
-              })
-              this.videoPlayer.attachMediaElement(videoElement)
-              this.videoPlayer.load()
-              this.videoPlayer.play()
+              // this.createVideo(data.data.server + data.data.key)
+              this.writeLog('播放器初始化成功，尝试播放...')
             }
-            this.writeLog('播放器初始化成功，尝试播放...')
           }
         })
         this.writeLog('房间加入成功')
@@ -281,6 +284,77 @@ export default {
     },
     volChange () {
       this.videoPlayer.volume = this.vols / 100
+    },
+    createVideo (url) {
+      const videoElement = document.getElementById('video-container')
+      const player = flvjs.createPlayer({
+        type: 'flv',
+        url,
+        isLive: true
+      })
+      player.on(flvjs.Events.ERROR, (errorType, errorDetail, errorInfo) => {
+        this.loading = true
+        this.writeLog('errorType:' + errorType)
+        this.writeLog('errorDetail:' + errorDetail)
+        this.writeLog('errorInfo:' + errorInfo)
+        // this.loadStatus=true
+        this.writeLog('3s后尝试重连...')
+        // this.statusMsg="正在重连。。。"
+        // 视频出错后销毁重新创建
+        if (player) {
+          player.pause()
+          player.unload()
+          player.detachMediaElement()
+          player.destroy()
+        }
+        setTimeout(() => {
+          this.createVideo(url)
+        }, 3000)
+      })
+      player.on(flvjs.Events.LOADING_COMPLETE, () => {
+        this.loading = true
+        player.pause()
+        player.unload()
+        player.detachMediaElement()
+        player.destroy()
+        this.writeLog('主播切断了直播')
+      })
+      player.on(flvjs.Events.METADATA_ARRIVED, () => {
+        this.loading = false
+        this.writeLog('拉流元数据获取成功')
+        player.play()
+        this.catchFrameTimer = setInterval(() => {
+          if (videoElement.buffered.length > 0) {
+            const end = videoElement.buffered.end(0) // 视频结尾时间
+            const current = videoElement.currentTime //  视频当前时间
+            const diff = end - current// 相差时间
+            // console.log(diff)
+            const diffCritical = 4 // 这里设定了超过4秒以上就进行跳转
+            const diffSpeedUp = 1 // 这里设置了超过1秒以上则进行视频加速播放
+            const maxPlaybackRate = 4// 自定义设置允许的最大播放速度
+            let playbackRate = 1.0 // 播放速度
+            if (diff > diffCritical) {
+              console.log('相差超过4秒，进行跳转')
+              videoElement.currentTime = end - 1.5
+              playbackRate = Math.max(1, Math.min(diffCritical, 16))
+            } else if (diff > diffSpeedUp) {
+              console.log('相差超过1秒，进行加速')
+              playbackRate = Math.max(1, Math.min(diff, maxPlaybackRate, 16))
+            }
+            videoElement.playbackRate = playbackRate
+            if (videoElement.paused) {
+              player.play()
+            }
+          }
+        }, 1000)
+      })
+      player.attachMediaElement(videoElement)
+      player.load()
+
+      player.on(flvjs.Events.MEDIA_INFO, info => {
+        this.writeLog(`视频信息：${JSON.stringify(info)}`)
+      })
+      this.videoPlayer = player
     }
   },
   beforeDestroy () {
@@ -293,6 +367,19 @@ export default {
 #danmukuSender {
   display: flex;
   width: 50%;
+}
+#logClose {
+  position: absolute;
+  right: 0px;
+  top: 0;
+  background: rgba(255,255,255,0.8);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  color: black;
+  text-align: center;
+  font-size: 14px;
+  cursor: pointer;
 }
 .normalInput {
   width: 100%;
@@ -319,7 +406,7 @@ export default {
   color: lightgray;
   z-index: 10;
   transition: .2s all linear;
-  background: rgba(100,100,100,.5);
+  background: rgba(100,100,100,.9);
 }
 #logs::-webkit-scrollbar {
   width : 10px;
