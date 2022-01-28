@@ -184,8 +184,8 @@ export default {
         }
         this.listHeight = totalHeight - this.headerHeight - this.footerHeight
       })
-      this.server.On('Leave', this.OnLeave)
-      this.server.On('Enter', this.OnEnter)
+      this.server.On('OnLeave', this.OnLeave)
+      this.server.On('OnEnter', this.OnEnter)
     },
     async closeWindow () {
       const res = await Confirm('确认要结束推流吗？', '提醒')

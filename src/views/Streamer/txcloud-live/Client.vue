@@ -4,7 +4,7 @@
       <div id="logs" v-if="showLogs">
         <p v-for="log in logs" :key="log.time">{{log.content}}</p>
       </div>
-      <div id="video-container" style="width:100%; height:100%;"></div>
+      <video id="video-container" style="width:100%; height:100%;"></video>
       <v-menu v-model="menu" :position-x="menuX" :position-y="menuY" absolute offset-y>
         <v-list dark style="background-color: rgba(100,100,100,.2);" ref="menuList">
           <v-list-item @click="playStatusChange">{{playStatus?'暂停': '播放'}}</v-list-item>
@@ -89,7 +89,7 @@
 import { loadLocalConfig, writeLocalConfig } from '@/utils/tools'
 import moment from 'moment'
 import { Info } from '@/utils/dialog'
-const { TcPlayer } = require('@/utils/TcPlayer-module-2.4.1')
+import flvjs from 'flv.js'
 export default {
   data () {
     return {
@@ -192,7 +192,7 @@ export default {
     },
     reconnect () {
       this.server.Emit('Leave', {})
-      this.videoPlayer.destroy()
+      this.videoPlayer.unload()
       this.writeLog('主动放弃连接成功，开始重新请求连接')
 
       this.server.Emit('RoomEntered', { id: this.$route.query.id })
@@ -246,36 +246,17 @@ export default {
         this.server.On('GetPullUrl', data => {
           if (data.code === 200) {
             this.writeLog('拉流地址获取成功')
-            const vueInstance = this
-            this.videoPlayer = new TcPlayer('video-container', {
-              webrtc: data.data.server + data.data.key,
-              autoplay: true,
-              controls: 'none',
-              // volume: this.vols / 100,
-              volume: 0,
-              webrtcConfig: { streamType: 'auto' },
-              listener: function (msg) {
-                switch (msg.type) {
-                  case 'loadeddata':
-                    vueInstance.writeLog('载入成功')
-                    break
-                  case 'error':
-                    vueInstance.writeLog('播放出现错误')
-                    break
-                  case 'play':
-                    vueInstance.writeLog('播放')
-                    break
-                  case 'pause':
-                    vueInstance.writeLog('暂停')
-                    break
-                  case 'playing':
-                    vueInstance.writeLog('开始播放...')
-                    this.el.style = 'width:100%;height:100%;'
-                    this.video.el.style = 'width:100%;height:100%;'
-                    break
-                }
-              }
-            })
+            if (flvjs.isSupported()) {
+              const videoElement = document.getElementById('video-container')
+              this.videoPlayer = flvjs.createPlayer({
+                type: 'flv',
+                url: data.data.server + data.data.key,
+                isLive: true
+              })
+              this.videoPlayer.attachMediaElement(videoElement)
+              this.videoPlayer.load()
+              this.videoPlayer.play()
+            }
             this.writeLog('播放器初始化成功，尝试播放...')
           }
         })
@@ -286,20 +267,20 @@ export default {
     },
     handleRoomVanish () {
       console.log('Receive room exit')
-      this.videoPlayer.destroy()
+      this.videoPlayer.unload()
       Info('与房主断开连接，点击确定返回房间列表', '连接中断').then(() => {
         this.thisWindow.close()
       })
     },
     handleRoomClose () {
       console.log('Receive room exit')
-      this.videoPlayer.destroy()
+      this.videoPlayer.unload()
       Info('与房主中断了连接，点击确定返回房间列表', '连接中断').then(() => {
         this.thisWindow.close()
       })
     },
     volChange () {
-      this.videoPlayer.volume(this.vols / 100)
+      this.videoPlayer.volume = this.vols / 100
     }
   },
   beforeDestroy () {
