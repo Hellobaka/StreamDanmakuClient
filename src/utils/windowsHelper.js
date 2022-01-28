@@ -13,7 +13,7 @@ export async function createChildWindow (url, client = true) {
   const childWin = new BrowserWindow({
     width: client ? 1600 : 450,
     height: client ? 900 : 600,
-    minWidth: client ? 850 : 200,
+    minWidth: client ? 850 : 447,
     minHeight: client ? 420 : 200,
     transparent: !client,
     frame: client,
