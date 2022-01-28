@@ -7,7 +7,7 @@
       <v-spacer></v-spacer>
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
-          <v-btn ref="copyInviteCode" icon @click="copyText(roomInstance.InviteCode)" v-bind="attrs" v-on="on" v-bind:style="ignoreMouse?'background:rgba(255,255,255,.2)':''"><v-icon>mdi-clipboard-text</v-icon></v-btn>
+          <v-btn ref="copyInviteCode" icon @click="copyText(roomInstance.InviteCode)" v-bind="attrs" v-on="on"><v-icon>mdi-clipboard-text</v-icon></v-btn>
         </template>
         <span>复制邀请码</span>
       </v-tooltip>
