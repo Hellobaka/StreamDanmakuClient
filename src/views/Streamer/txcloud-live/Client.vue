@@ -5,6 +5,10 @@
         <p v-for="log in logs" :key="log.id">{{log.content}}</p>
         <p id="logBottom"></p>
       </div>
+      <div id="danmukuContainer" :style="`position: absolute; width: 100%; z-index: 9; height:${danmukuConfig.Height}%`"></div>
+      <div id="danmukuListToggle" @click="danmukuListToggle">
+        <div id="danmukuListToggleArrow" v-bind:class="{'danmukuListToggleArrowReverse': danmukuListShow}"></div>
+      </div>
       <video id="video-container" style="width:100%; height:100%;"></video>
       <v-menu v-model="menu" :position-x="menuX" :position-y="menuY" absolute offset-y>
         <v-list dark style="background-color: rgba(100,100,100,.2);" ref="menuList">
@@ -83,6 +87,26 @@
         </v-tooltip>
       </div>
     </div>
+    <div id="danmukuListContainer" v-bind:class="{'danmukuListHidden': !danmukuListShow}">
+      <v-list id="danmukuList">
+        <v-list-item v-for="item in danmukuList" :key="item.id" dense style="flex-wrap: wrap;" @mousedown.right.stop="showMenu($event, true, item.id)">
+          <span style="color:skyblue">
+            [{{timeFormat(item.time)}}]
+          </span>
+          <span style="word-break: break-all;word-wrap: break-word;overflow: auto;">{{item.content}}</span>
+        </v-list-item>
+        <v-menu v-model="menuDanmuku" :position-x="menuX" :position-y="menuY" absolute offset-y>
+          <v-list min-width="150px" dark style="background-color: rgba(100,100,100,.8);">
+            <v-list-item @click="clickable">复制{{currentDanmuku.content}}</v-list-item>
+            <v-list-item @click="clickable">添加好友</v-list-item>
+            <v-list-item @click="clickable">复读</v-list-item>
+            <v-list-item dense><v-divider></v-divider></v-list-item>
+            <v-list-item @click="clickable">清空弹幕</v-list-item>
+          </v-list>
+        </v-menu>
+        <div id="danmukuBottom"></div>
+      </v-list>
+    </div>
   </div>
 </template>
 
@@ -115,7 +139,16 @@ export default {
       showLogs: true,
       roomInstance: {},
       videoPlayer: null,
-      catchFrameTimer: 0
+      catchFrameTimer: 0,
+      danmukuListShow: true,
+      danmukuList: [],
+      menuDanmuku: false,
+      maxDanmukuCount: 20,
+      danmukuID: 0,
+      currentDanmuku: {},
+      danmukuConfig: {
+        Height: 75
+      }
     }
   },
   computed: {
@@ -199,13 +232,17 @@ export default {
 
       this.server.Emit('RoomEntered', { id: this.$route.query.id })
     },
-    showMenu (e) {
+    showMenu (e, isDanmukuMenu = false, id = 0) {
       e.preventDefault()
       this.menu = false
+      this.menuDanmuku = false
       this.menuX = e.clientX
       this.menuY = e.clientY
+      this.currentDanmuku = this.danmukuList.find(x => x.id === id)
       this.$nextTick(() => {
-        this.menu = true
+        if (isDanmukuMenu) {
+          this.menuDanmuku = true
+        } else { this.menu = true }
       })
     },
     clickHandle () {},
@@ -241,7 +278,18 @@ export default {
         if (this.danmukuCD === 0) return
         this.danmukuCD--
       }, 1000)
-      this.writeLog(this.danmukuInput)
+      this.server.On('Danmuku', data => {
+        if (data.code === 200) {
+          this.AddDanmuku(this.danmukuInput, '#ffffff')
+        } else {
+          this.snackbar.Error(data.msg)
+        }
+      })
+      this.server.Emit('Danmuku', {
+        content: this.danmukuInput,
+        color: '#ffffff'
+      })
+      this.AddDanmuku(this.danmukuInput, '#ffffff')
       this.danmukuInput = ''
     },
     showDanmukuChange () {
@@ -355,6 +403,23 @@ export default {
         this.writeLog(`视频信息：${JSON.stringify(info)}`)
       })
       this.videoPlayer = player
+    },
+    timeFormat (time) {
+      return moment(time).format('yyyy-MM-DD HH:mm:ss')
+    },
+    clickable () {},
+    danmukuListToggle () {
+      this.danmukuListShow = !this.danmukuListShow
+    },
+    AddDanmuku (content, color) {
+      if (this.danmukuList.length > this.maxDanmukuCount) {
+        this.danmukuList.splice(0, 1)
+      }
+      this.danmukuList.push({ id: this.danmukuID, content, color, time: new Date().getTime() })
+      this.danmukuID++
+      this.$nextTick(() => {
+        document.querySelector('#danmukuBottom').scrollIntoView()
+      })
     }
   },
   beforeDestroy () {
@@ -364,6 +429,63 @@ export default {
 </script>
 
 <style scoped lang="scss">
+#danmukuList {
+  overflow-y: scroll;
+  height: 100%;
+  width: 100%;
+}
+#danmukuList::-webkit-scrollbar {
+  width : 10px;
+  height: 1px;
+}
+#danmukuList::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background   : #535353;
+}
+#danmukuList::-webkit-scrollbar-track {
+  border-radius: 10px;
+  background   : #ededed;
+}
+
+#danmukuListContainer {
+  width: 25%;
+  background: whitesmoke;
+  transition: all .2s;
+}
+.danmukuListHidden {
+  width: 0 !important;
+}
+#danmukuListToggle {
+  opacity: 0;
+  transition: all 0.5s;
+  position: absolute;
+  height: 20%;
+  width: 15px;
+  background: white;
+  right: 0;
+  top: 40%;
+  box-shadow: 5px 0px 5px #888888;
+  border-radius: 10px 0px 0px 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+  cursor: pointer;
+}
+#danmukuListToggle:hover {
+  opacity: 1;
+}
+#danmukuListToggleArrow {
+  width: 7px;
+  height: 7px;
+  border-left: 2px solid black;
+  border-bottom: 2px solid black;
+  transform: rotate(45deg);
+  transition: all .2s;
+}
+.danmukuListToggleArrowReverse {
+  transform: rotate(225deg) !important;
+}
 #danmukuSender {
   display: flex;
   width: 50%;
