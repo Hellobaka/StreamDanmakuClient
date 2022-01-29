@@ -5,7 +5,8 @@
         <p v-for="log in logs" :key="log.id">{{log.content}}</p>
         <p id="logBottom"></p>
       </div>
-      <div id="danmukuContainer" :style="`position: absolute; width: 100%; z-index: 9; height:${danmukuConfig.Height}%`"></div>
+      <div id="danmukuContainer" ref="danmukuContainer" :style="`position: absolute; width: 100%; z-index: 9; height:${danmukuConfig.Height}%`">
+      </div>
       <div id="danmukuListToggle" @click="danmukuListToggle">
         <div id="danmukuListToggleArrow" v-bind:class="{'danmukuListToggleArrowReverse': danmukuListShow}"></div>
       </div>
@@ -148,7 +149,10 @@ export default {
       currentDanmuku: {},
       danmukuConfig: {
         Height: 75
-      }
+      },
+      danmukuItemList: [],
+      danmukuLastStep: 0,
+      danmukuMaxStep: 26
     }
   },
   computed: {
@@ -411,6 +415,68 @@ export default {
     danmukuListToggle () {
       this.danmukuListShow = !this.danmukuListShow
     },
+    createDanmukuElement (text, color, fontSize = 20) {
+      const element = document.createElement('span')
+      this.$refs.danmukuContainer.appendChild(element)
+      element.className = 'danmukuItem'
+      element.innerText = text
+      element.style = `font-size: ${fontSize}px; color: ${color};`
+      element.click = this.clickable
+      const height = element.clientHeight
+      let step = 0
+      let findFlag = false
+      const containerWidth = this.$refs.danmukuContainer.clientWidth
+      this.danmukuMaxStep = parseInt(this.$refs.danmukuContainer.clientHeight / height)
+      for (let i = 0; i <= this.danmukuMaxStep; i++) {
+        const len = this.danmukuItemList.filter(x => x.step === step && containerWidth - x.offsetLeft - x.clientWidth < x.clientWidth)
+        if (len.length === 0) {
+          findFlag = true
+          break
+        } else {
+          step++
+        }
+      }
+      if (!findFlag) {
+        if (this.danmukuLastStep === this.danmukuMaxStep) {
+          this.danmukuLastStep = 0
+        } else {
+          this.danmukuLastStep++
+        }
+
+        element.step = this.danmukuLastStep
+        step = element.step
+        const arr = this.danmukuItemList.filter(x => x.step === this.danmukuLastStep)
+        const lastElement = arr[arr.length - 1]
+        const rightOffset = containerWidth - lastElement.offsetLeft - lastElement.clientWidth
+        element.style.right = `${rightOffset - lastElement.clientWidth - 5}px`
+      } else {
+        this.danmukuLastStep = step
+      }
+      element.step = step
+      element.style.top = `${height * step}px`
+      this.danmukuItemList.push(element)
+      this.danmukuMoveAnime(element)
+      // element.addEventListener('webkitAnimationEnd', () => {
+      //   this.$refs.danmukuContainer.removeChild(element)
+      // })
+    },
+    danmukuMoveAnime (element, speed = 9.5) {
+      // speed 定义为多长时间移动 1px, 一般宽度为1580px, 假定15s跑完, 则此值为 15000/1580 = 9.5
+      // 此值不会因为窗口变化而变化, 所以是经验向数值
+      const width = element.clientWidth
+      let begin = this.$refs.danmukuContainer.clientWidth - element.offsetLeft - element.clientWidth
+      const id = setInterval(() => {
+        if (element.offsetLeft <= -width * 2) {
+          // console.log('end')
+          this.$refs.danmukuContainer.removeChild(element)
+          this.danmukuItemList.splice(this.danmukuItemList.indexOf(element), 1)
+          clearInterval(id)
+          return
+        }
+        element.style.right = begin + 'px'
+        begin++
+      }, speed)
+    },
     AddDanmuku (content, color) {
       if (this.danmukuList.length > this.maxDanmukuCount) {
         this.danmukuList.splice(0, 1)
@@ -419,6 +485,7 @@ export default {
       this.danmukuID++
       this.$nextTick(() => {
         document.querySelector('#danmukuBottom').scrollIntoView()
+        this.createDanmukuElement(content, color)
       })
     }
   },
@@ -427,8 +494,22 @@ export default {
   }
 }
 </script>
+<style>
+@keyframes danmukuAnime {
+  from {right: 0;}
+  to {right: 140%;}
+}
+.danmukuItem {
+  /* animation: danmukuAnime 10s linear; */
+  position: absolute;
+  font-family: 微软雅黑;
+  font-weight: bold;
+  right: 0px;
+  transform: translate(100%);
+}
+</style>
 
-<style scoped lang="scss">
+<style scoped>
 #danmukuList {
   overflow-y: scroll;
   height: 100%;
