@@ -52,7 +52,40 @@
           </div>
         </v-hover>
         <v-spacer></v-spacer>
-        <div id="danmukuSender">
+        <v-tooltip top>
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn v-on="on" v-bind="attrs" icon @click="danmukuSenderControlBoxShow=!danmukuSenderControlBoxShow"><v-icon>mdi-alpha-a-box-outline</v-icon></v-btn>
+          </template>
+          <span>弹幕设置</span>
+        </v-tooltip>
+        <div id="danmukuSender" style="position: relative;">
+          <v-fade-transition>
+            <div v-if="danmukuSenderControlBoxShow" id="danmukuSenderControlBox" class="popBox" @mouseleave="danmukuSenderControlBoxShow=false" style="padding-bottom: 0">
+              <div style="display: flex; align-items: center;">
+                <span>弹幕位置</span>
+                <div style="margin-left: 5px;border-radius: 5px; overflow: hidden;">
+                  <v-btn-toggle mandatory dark v-model="danmukuConfig.Position">
+                    <v-btn small text value="0">滚动</v-btn>
+                    <v-btn small text value="1">顶部</v-btn>
+                    <v-btn small text value="2">底部</v-btn>
+                  </v-btn-toggle>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center;margin-top: 10px;">
+                <span>弹幕颜色</span>
+                <div class="colorBlock" :style="`background-color:${danmukuConfig.Color};`">
+                </div>
+              </div>
+              <div id="danmukuColorBlocks" style="display: flex; align-items: center; margin-top: 10px;">
+                <div class="colorBlock" v-for="color in danmukuColors" :key="color.color" :style="`background-color:${color};`" @click="danmukuConfig.Color=color"></div>
+              </div>
+              <div style="display: flex; margin-top: 15px;">
+                <v-text-field dense dark solo v-model="danmukuConfig.Color"></v-text-field>
+                <v-btn dark style="margin-left: 5px;" @click="danmukuConfig.Color='#ffffff'">重置</v-btn>
+              </div>
+            </div>
+          </v-fade-transition>
+
           <input :disabled="!showDanmuku" v-model="danmukuInput" @keydown.enter="sendDanmuku" type="text" class="normalInput" @focus="inputOnFocus" @blur="inputOnBlur" ref="danmukuSender">
           <v-tooltip top>
             <template v-slot:activator="{ on, attrs }">
@@ -72,14 +105,14 @@
           <div>
             <v-btn icon><v-icon>mdi-message-cog-outline</v-icon></v-btn>
             <v-fade-transition>
-              <div v-if="holdHover||hover" id="danmukuControlBox">
-                <v-container style="display: flex;">
-                  <v-autocomplete @focus="holdHover=true" @blur="holdHover=false" v-model="danmukuConfig.FontFamily" :items="fontList" outlined dense solo dark label="弹幕字体" style="width: 70%;"></v-autocomplete>
-                  <v-checkbox v-model="danmukuConfig.Bold" label="粗体" dense dark></v-checkbox>
+              <div v-if="holdHover||hover" id="danmukuControlBox" class="popBox">
+                <v-container style="display: flex;align-items: baseline;">
+                  <v-autocomplete hide-details height="15" @focus="holdHover=true" @blur="holdHover=false" v-model="danmukuConfig.FontFamily" :items="fontList" outlined dense solo dark label="弹幕字体" style="width: 70%;"></v-autocomplete>
+                  <v-checkbox hide-details height="15" v-model="danmukuConfig.Bold" label="粗体" dense dark></v-checkbox>
                 </v-container>
-                <v-slider label="弹幕大小" min="12" v-model="danmukuConfig.FontSize" thumb-label :thumb-size="30" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary"></v-slider>
-                <v-slider label="弹幕速度" min="5" max="200" v-model="danmukuConfig.Speed" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary"></v-slider>
-                <v-slider label="显示区域" v-model="danmukuConfig.Height" :thumb-size="30" step="25" min="25" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary">
+                <v-slider height="15" label="弹幕大小" min="12" v-model="danmukuConfig.FontSize" thumb-label :thumb-size="30" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary"></v-slider>
+                <v-slider height="15" label="弹幕速度" min="5" max="200" v-model="danmukuConfig.Speed" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary"></v-slider>
+                <v-slider height="15" label="显示区域" v-model="danmukuConfig.Height" :thumb-size="30" step="25" min="25" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary">
                   <template v-slot:thumb-label="{ value }">
                     {{ showAreaText(value) }}
                   </template>
@@ -163,18 +196,22 @@ export default {
       maxDanmukuCount: 20,
       danmukuID: 0,
       currentDanmuku: {},
+      danmukuSenderControlBoxShow: false,
       danmukuConfig: {
         FontFamily: '微软雅黑',
         Bold: true,
         FontSize: 20,
         Height: 75,
-        Speed: 50
+        Speed: 50,
+        Position: '0',
+        Color: '#ffffff'
       },
       fontList: [],
       holdHover: false,
       danmukuItemList: [],
       danmukuLastStep: 0,
-      danmukuMaxStep: 26
+      danmukuMaxStep: 26,
+      danmukuColors: ['#ffffff', '#000000', '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#00ffff', '#ff00ff', '#66ccff', '#7fffd4', '#00bfff', '#98fb98']
     }
   },
   computed: {
@@ -313,7 +350,7 @@ export default {
       }, 1000)
       this.server.On('Danmuku', data => {
         if (data.code === 200) {
-          this.AddDanmuku(this.danmukuInput, '#ffffff')
+          this.AddDanmuku(this.danmukuInput, this.danmukuConfig.Color, this.danmukuConfig.Position)
         } else {
           this.snackbar.Error(data.msg)
         }
@@ -322,7 +359,7 @@ export default {
         content: this.danmukuInput,
         color: '#ffffff'
       })
-      this.AddDanmuku(this.danmukuInput, '#ffffff')
+      this.AddDanmuku(this.danmukuInput, this.danmukuConfig.Color, this.danmukuConfig.Position)
       this.danmukuInput = ''
     },
     showDanmukuChange () {
@@ -444,13 +481,19 @@ export default {
     danmukuListToggle () {
       this.danmukuListShow = !this.danmukuListShow
     },
-    createDanmukuElement (text, color, fontSize = 20, bold = true, fontFamily = 'Microsoft YaHei') {
+    createDanmukuElement (text, color, position = '0', fontSize = 20, bold = true, fontFamily = 'Microsoft YaHei') {
       const element = document.createElement('span')
       this.$refs.danmukuContainer.appendChild(element)
       element.className = 'danmukuItem'
       element.innerText = text
       element.style = `font-size: ${fontSize}px; width: ${fontSize * text.length + 10}px; color: ${color}; font-family: ${fontFamily}; font-weight: ${bold ? 'bold' : 'normal'}`
       element.click = this.clickable
+
+      // baseSpeed 定义为多长时间移动 1px, 一般宽度为1580px, 假定15s跑完, 则此值为 15000/1580 = 9.5
+      // 此值不会因为窗口变化而变化, 所以是经验向数值
+      const baseSpeed = 9.5
+      const speed = baseSpeed * (1 / (this.danmukuConfig.Speed / 50))
+
       const height = element.clientHeight
       let step = 0
       let findFlag = false
@@ -474,24 +517,33 @@ export default {
 
         element.step = this.danmukuLastStep
         step = element.step
-        const arr = this.danmukuItemList.filter(x => x.step === this.danmukuLastStep)
-        const lastElement = arr[arr.length - 1]
-        const rightOffset = containerWidth - lastElement.offsetLeft - lastElement.clientWidth
-        element.style.right = `${rightOffset - lastElement.clientWidth - 5}px`
+        if (position === '0') {
+          const arr = this.danmukuItemList.filter(x => x.step === this.danmukuLastStep)
+          const lastElement = arr[arr.length - 1]
+          const rightOffset = containerWidth - lastElement.offsetLeft - lastElement.clientWidth
+          element.style.right = `${rightOffset - lastElement.clientWidth - 5}px`
+        } else if (position === '1') {
+
+        }
       } else {
         this.danmukuLastStep = step
       }
       element.step = step
       element.style.top = `${height * step}px`
       this.danmukuItemList.push(element)
-      this.danmukuMoveAnime(element)
+      this.danmukuMoveAnime(element, position === '0', speed)
       // element.addEventListener('webkitAnimationEnd', () => {
       //   this.$refs.danmukuContainer.removeChild(element)
       // })
     },
-    danmukuMoveAnime (element, speed = 9.5) {
-      // speed 定义为多长时间移动 1px, 一般宽度为1580px, 假定15s跑完, 则此值为 15000/1580 = 9.5
-      // 此值不会因为窗口变化而变化, 所以是经验向数值
+    danmukuMoveAnime (element, isRoll, speed) {
+      if (!isRoll) {
+        setTimeout(() => {
+          this.$refs.danmukuContainer.removeChild(element)
+          this.danmukuItemList.splice(this.danmukuItemList.indexOf(element), 1)
+        }, 5000)
+        return
+      }
       const width = element.clientWidth
       let begin = this.$refs.danmukuContainer.clientWidth - element.offsetLeft - element.clientWidth
       const id = setInterval(() => {
@@ -504,18 +556,18 @@ export default {
         }
         element.style.right = begin + 'px'
         begin++
-      }, speed * (1 / (this.danmukuConfig.Speed / 50)))
+      }, speed)
     },
-    AddDanmuku (content, color) {
+    AddDanmuku (content, color, position) {
       if (!this.showDanmuku) return
       if (this.danmukuList.length > this.maxDanmukuCount) {
         this.danmukuList.splice(0, 1)
       }
-      this.danmukuList.push({ id: this.danmukuID, content, color, time: new Date().getTime() })
+      this.danmukuList.push({ id: this.danmukuID, content, color, position, time: new Date().getTime() })
       this.danmukuID++
       this.$nextTick(() => {
         document.querySelector('#danmukuBottom').scrollIntoView()
-        this.createDanmukuElement(content, color, this.danmukuConfig.FontSize, this.danmukuConfig.Bold, this.danmukuConfig.FontFamily)
+        this.createDanmukuElement(content, color, position, this.danmukuConfig.FontSize, this.danmukuConfig.Bold, this.danmukuConfig.FontFamily)
       })
     },
     showAreaText (value) {
@@ -710,15 +762,30 @@ export default {
 .toolbarInactive {
   opacity: 0;
 }
-#danmukuControlBox{
+.popBox {
   position: absolute;
-  width: 250px;
-  bottom: 100%;
-  transform: translate(-55%);
+  z-index: 15;
   background: rgba(100,100,100,.5);
   color: white;
   padding: 10px;
   border-radius: 5px;
   z-index: 15;
+}
+#danmukuControlBox{
+  width: 250px;
+  bottom: 100%;
+  transform: translate(-55%);
+}
+#danmukuSenderControlBox {
+  width: 250px;
+  bottom: 100%;
+  transform: translate(-55%);
+}
+.colorBlock {
+  width: 15px;
+  height: 15px;
+  margin-left: 5px;
+  border: 2px solid white;
+  border-radius: 3px;
 }
 </style>
