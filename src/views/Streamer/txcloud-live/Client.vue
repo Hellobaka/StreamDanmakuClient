@@ -1,7 +1,7 @@
 <template>
   <div style="display: flex;height:100%;" @mousemove="toolbarActiveChange" data-app="true">
     <div id="videoContainer" @contextmenu="showMenu">
-      <div id="logs" v-if="showLogs">
+      <div class="slimScrollbar" id="logs" v-if="showLogs">
         <p v-for="log in logs" :key="log.id">{{log.content}}</p>
         <p id="logBottom"></p>
       </div>
@@ -64,7 +64,7 @@
               <div style="display: flex; align-items: center;">
                 <span>弹幕位置</span>
                 <div style="margin-left: 5px;border-radius: 5px; overflow: hidden;">
-                  <v-btn-toggle mandatory dark v-model="danmukuConfig.Position">
+                  <v-btn-toggle mandatory dark v-model="danmukuConfig.Position" :color="$vuetify.theme.themes.light.primary">
                     <v-btn small text value="0">滚动</v-btn>
                     <v-btn small text value="1">顶部</v-btn>
                     <v-btn small text value="2">底部</v-btn>
@@ -101,12 +101,64 @@
           </template>
           <span>{{showDanmuku?'关闭':'打开'}}弹幕</span>
         </v-tooltip>
-        <v-tooltip top>
-          <template v-slot:activator="{ on, attrs }">
-            <v-btn @click="clickable" v-on="on" v-bind="attrs" icon><v-icon>mdi-message-question-outline</v-icon></v-btn>
-          </template>
-          <span>弹幕屏蔽设置</span>
-        </v-tooltip>
+        <v-hover v-slot="{ hover }">
+          <div>
+            <v-btn icon><v-icon>mdi-message-question-outline</v-icon></v-btn>
+            <v-fade-transition>
+              <div v-if="hover" id="danmukuControlBox" class="popBox">
+                <v-checkbox :color="$vuetify.theme.themes.light.primary" dark dense height="15" label="弹幕屏蔽生效开关" v-model="danmukuBlocker.switch"></v-checkbox>
+                <span style="color: rgba(255, 255, 255, 0.7);">屏蔽设置</span>
+                <v-tabs style="margin-bottom: 5px;" dark fixed-tabs :color="$vuetify.theme.themes.light.primary" v-model="danmukuBlockerItem">
+                  <v-tab href="#tab-1">
+                    关键字
+                  </v-tab>
+                  <v-tab href="#tab-2">用户</v-tab>
+                </v-tabs>
+                <v-tabs-items v-model="danmukuBlockerItem">
+                  <v-tab-item
+                    value="tab-1"
+                  >
+                    <v-list id="blockerList" class="slimScrollbar" subheader>
+                      <v-subheader>
+                        <span>共有屏蔽词 {{danmukuBlocker.keywords.length}} 个</span>
+                        <v-btn icon small @click="clearDanmukuBlocker('keywords')"><v-icon>mdi-delete</v-icon></v-btn>
+                      </v-subheader>
+                      <v-list-item dense v-for="item in danmukuBlocker.keywords" :key="item">
+                        <span style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">{{item}}</span>
+                        <v-btn icon @click="removeDanmukuBlocker('keywords',item)"><v-icon>mdi-close</v-icon></v-btn>
+                      </v-list-item>
+                      <v-list-item dense v-if="danmukuBlocker.keywords.length===0">
+                        <span style="width: 100%; text-align: center;">(・ω・) 列表为空</span>
+                      </v-list-item>
+                    </v-list>
+                    <div style="display: flex; align-items: baseline; margin-bottom: 5px; margin-right: 5px;">
+                      <v-text-field hide-details="auto" label="关键词或正则表达式" clearable dense style="margin: 0 10px;" v-model="danmukuBlockerTmpWord"></v-text-field>
+                      <v-btn dark @click="addBlockKeyword">添加</v-btn>
+                    </div>
+                  </v-tab-item>
+                  <v-tab-item
+                    value="tab-2"
+                  >
+                    <v-list id="blockerList" class="slimScrollbar">
+                      <v-subheader>
+                        <span>共屏蔽用户 {{danmukuBlocker.users.length}} 个</span>
+                        <v-btn icon small @click="clearDanmukuBlocker('users')"><v-icon>mdi-delete</v-icon></v-btn>
+                      </v-subheader>
+
+                      <v-list-item dense v-for="item in danmukuBlocker.users" :key="item.id">
+                        <span style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">{{item.name}} - UID:{{item.id}}</span>
+                        <v-btn icon @click="removeDanmukuBlocker('users',item)"><v-icon>mdi-close</v-icon></v-btn>
+                      </v-list-item>
+                      <v-list-item dense v-if="danmukuBlocker.users.length===0">
+                        <span style="width: 100%; text-align: center;">(・ω・) 列表为空</span>
+                      </v-list-item>
+                    </v-list>
+                  </v-tab-item>
+                </v-tabs-items>
+              </div>
+            </v-fade-transition>
+          </div>
+        </v-hover>
         <v-hover v-slot="{ hover }">
           <div>
             <v-btn icon><v-icon>mdi-message-cog-outline</v-icon></v-btn>
@@ -114,9 +166,14 @@
               <div v-if="holdHover||hover" id="danmukuControlBox" class="popBox">
                 <v-container style="display: flex;align-items: baseline;">
                   <v-autocomplete hide-details height="15" @focus="holdHover=true" @blur="holdHover=false" v-model="danmukuConfig.FontFamily" :items="fontList" outlined dense solo dark label="弹幕字体" style="width: 70%;"></v-autocomplete>
-                  <v-checkbox hide-details height="15" v-model="danmukuConfig.Bold" label="粗体" dense dark></v-checkbox>
+                  <v-checkbox :color="$vuetify.theme.themes.light.primary" hide-details height="15" v-model="danmukuConfig.Bold" label="粗体" dense dark></v-checkbox>
                 </v-container>
                 <v-slider height="15" label="弹幕大小" min="12" max="30" v-model="danmukuConfig.FontSize" thumb-label :thumb-size="30" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary"></v-slider>
+                <v-slider height="15" label="弹幕透明" min="3" max="10" v-model="danmukuConfig.Opacity" thumb-label :thumb-size="30" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary">
+                  <template v-slot:thumb-label="{ value }">
+                    {{ value*10 }}%
+                  </template>
+                </v-slider>
                 <v-slider height="15" label="弹幕速度" min="5" max="200" v-model="danmukuConfig.Speed" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary"></v-slider>
                 <v-slider height="15" label="显示区域" v-model="danmukuConfig.Height" :thumb-size="30" step="25" min="25" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary">
                   <template v-slot:thumb-label="{ value }">
@@ -142,7 +199,7 @@
       </div>
     </div>
     <div id="danmukuListContainer" v-bind:class="{'danmukuListHidden': !danmukuListShow}">
-      <v-list subheader id="danmukuList">
+      <v-list subheader id="danmukuList" class="slimScrollbar">
         <v-subheader>弹幕列表</v-subheader>
         <v-list-item v-for="item in danmukuList" :key="item.id" dense style="flex-wrap: wrap;" @mousedown.right.stop="showMenu($event, true, item.id)">
           <span style="color:skyblue">
@@ -168,7 +225,7 @@
 <script>
 import { loadLocalConfig, writeLocalConfig } from '@/utils/tools'
 import moment from 'moment'
-import { Info } from '@/utils/dialog'
+import { Info, Confirm } from '@/utils/dialog'
 import flvjs from 'flv.js'
 import { getFonts } from 'font-list'
 export default {
@@ -210,7 +267,15 @@ export default {
         Height: 75,
         Speed: 50,
         Position: '0',
-        Color: '#ffffff'
+        Color: '#ffffff',
+        Opacity: 10
+      },
+      danmukuBlockerItem: null,
+      danmukuBlockerTmpWord: '',
+      danmukuBlocker: {
+        switch: true,
+        keywords: [],
+        users: [{ name: 'aaa', id: 1 }]
       },
       fontList: [],
       holdHover: false,
@@ -268,6 +333,7 @@ export default {
     }).catch(err => {
       console.log(err)
     })
+    this.$vuetify.theme.dark = true
   },
   methods: {
     callScreenFull () {
@@ -492,9 +558,10 @@ export default {
       this.$refs.danmukuContainer.appendChild(element)
       element.position = position
       element.innerText = text
-      element.style = `font-size: ${fontSize}px; color: ${color}; font-family: ${fontFamily}; font-weight: ${bold ? 'bold' : 'normal'}`
+      element.style = `font-size: ${fontSize}px; opacity: ${this.danmukuConfig.Opacity / 10}; color: ${color}; font-family: ${fontFamily}; font-weight: ${bold ? 'bold' : 'normal'}`
       element.click = this.clickable
       element.style.width = element.offsetWidth + 'px'
+      element.classList.add('danmukuBase')
 
       // baseSpeed 定义为多长时间移动 1px, 一般宽度为1580px, 假定15s跑完, 则此值为 15000/1580 = 9.5
       // 此值不会因为窗口变化而变化, 所以是经验向数值
@@ -514,7 +581,7 @@ export default {
       // })
     },
     createRollDanmuku (element) {
-      element.className = 'danmukuRollItem'
+      element.classList.add('danmukuRollItem')
 
       const height = element.offsetHeight
       let step = 0
@@ -551,7 +618,7 @@ export default {
       return element
     },
     createStillDanmuku (element, position) {
-      element.className = 'danmukuStillItem'
+      element.classList.add('danmukuStillItem')
 
       const height = element.offsetHeight
       let step = 0
@@ -627,6 +694,46 @@ export default {
         case 75: return '3/4'
         case 100: return '全屏'
       }
+    },
+    addBlockKeyword () {
+      const keyword = this.danmukuBlockerTmpWord
+      if (keyword.length === 0 || keyword.trim().length === 0) {
+        this.snackbar.Error('关键词不能为空')
+        return
+      }
+      if (this.danmukuBlocker.keywords.indexOf(keyword) !== -1) {
+        this.snackbar.Error('关键词已存在')
+        return
+      }
+      this.danmukuBlocker.keywords.push(keyword)
+      this.danmukuBlockerTmpWord = ''
+    },
+    removeDanmukuBlocker (type, content) {
+      switch (type) {
+        case 'keywords':
+          this.danmukuBlocker.keywords.splice(this.danmukuBlocker.keywords.indexOf(content), 1)
+          break
+        case 'users':
+          this.danmukuBlocker.users.splice(this.danmukuBlocker.users.indexOf(content), 1)
+          break
+        default:
+          break
+      }
+    },
+    async clearDanmukuBlocker (type) {
+      const res = await Confirm('是否清空此屏蔽项目', '确认')
+      if (res) {
+        switch (type) {
+          case 'keywords':
+            this.danmukuBlocker.keywords = []
+            break
+          case 'users':
+            this.danmukuBlocker.users = []
+            break
+          default:
+            break
+        }
+      }
     }
   },
   beforeDestroy () {
@@ -639,35 +746,49 @@ export default {
   from {right: 0;}
   to {right: 140%;}
 }
-.danmukuRollItem {
-  /* animation: danmukuAnime 10s linear; */
+.danmukuBase {
   position: absolute;
+  user-select: none;
+  pointer-events: none;
+  /* 我超，为什么b站弹幕是用canvas画的 */
+  /* -webkit-text-stroke: 1px white; */
+  /* text-shadow: 1px 1px #fff; */
+}
+.danmukuRollItem {
   right: 0px;
   transform: translate(100%);
 }
 .danmukuStillItem {
-  /* animation: danmukuAnime 10s linear; */
-  position: absolute;
   left: 50%;
   transform: translate(-50%);
+}
+.v-label--active {
+  transform-origin: top left;
 }
 </style>
 
 <style scoped>
+#blockerList {
+  max-height: 150px;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+}
+
 #danmukuList {
   overflow-y: scroll;
   height: 100%;
   width: 100%;
 }
-#danmukuList::-webkit-scrollbar {
+.slimScrollbar::-webkit-scrollbar {
   width : 10px;
   height: 1px;
 }
-#danmukuList::-webkit-scrollbar-thumb {
+.slimScrollbar::-webkit-scrollbar-thumb {
   border-radius: 10px;
   background   : #535353;
 }
-#danmukuList::-webkit-scrollbar-track {
+.slimScrollbar::-webkit-scrollbar-track {
   border-radius: 10px;
   background   : #ededed;
 }
@@ -755,18 +876,6 @@ export default {
   z-index: 10;
   transition: .2s all linear;
   background: rgba(100,100,100,.9);
-}
-#logs::-webkit-scrollbar {
-  width : 10px;
-  height: 1px;
-}
-#logs::-webkit-scrollbar-thumb {
-  border-radius: 10px;
-  background   : #535353;
-}
-#logs::-webkit-scrollbar-track {
-  border-radius: 10px;
-  background   : #ededed;
 }
 .spacer {
   height: 100%;
