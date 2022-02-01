@@ -5,7 +5,7 @@
         <p v-for="log in logs" :key="log.id">{{log.content}}</p>
         <p id="logBottom"></p>
       </div>
-      <div id="danmukuContainer" ref="danmukuContainer" v-show="showDanmuku" :style="`position: absolute; width: 100%; z-index: 9; height:${danmukuConfig.Height}%`">
+      <div id="danmukuContainer" ref="danmukuContainer" v-show="showDanmuku" style="position: absolute; width: 100%; z-index: 9; height:95%">
       </div>
       <div id="danmukuListToggle" @click="danmukuListToggle">
         <div id="danmukuListToggleArrow" v-bind:class="{'danmukuListToggleArrowReverse': danmukuListShow}"></div>
@@ -101,6 +101,12 @@
           </template>
           <span>{{showDanmuku?'关闭':'打开'}}弹幕</span>
         </v-tooltip>
+        <v-tooltip top>
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn @click="clickable" v-on="on" v-bind="attrs" icon><v-icon>mdi-message-question-outline</v-icon></v-btn>
+          </template>
+          <span>弹幕屏蔽设置</span>
+        </v-tooltip>
         <v-hover v-slot="{ hover }">
           <div>
             <v-btn icon><v-icon>mdi-message-cog-outline</v-icon></v-btn>
@@ -110,7 +116,7 @@
                   <v-autocomplete hide-details height="15" @focus="holdHover=true" @blur="holdHover=false" v-model="danmukuConfig.FontFamily" :items="fontList" outlined dense solo dark label="弹幕字体" style="width: 70%;"></v-autocomplete>
                   <v-checkbox hide-details height="15" v-model="danmukuConfig.Bold" label="粗体" dense dark></v-checkbox>
                 </v-container>
-                <v-slider height="15" label="弹幕大小" min="12" v-model="danmukuConfig.FontSize" thumb-label :thumb-size="30" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary"></v-slider>
+                <v-slider height="15" label="弹幕大小" min="12" max="30" v-model="danmukuConfig.FontSize" thumb-label :thumb-size="30" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary"></v-slider>
                 <v-slider height="15" label="弹幕速度" min="5" max="200" v-model="danmukuConfig.Speed" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary"></v-slider>
                 <v-slider height="15" label="显示区域" v-model="danmukuConfig.Height" :thumb-size="30" step="25" min="25" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary">
                   <template v-slot:thumb-label="{ value }">
@@ -482,25 +488,41 @@ export default {
       this.danmukuListShow = !this.danmukuListShow
     },
     createDanmukuElement (text, color, position = '0', fontSize = 20, bold = true, fontFamily = 'Microsoft YaHei') {
-      const element = document.createElement('span')
+      let element = document.createElement('span')
       this.$refs.danmukuContainer.appendChild(element)
-      element.className = 'danmukuItem'
+      element.position = position
       element.innerText = text
-      element.style = `font-size: ${fontSize}px; width: ${fontSize * text.length + 10}px; color: ${color}; font-family: ${fontFamily}; font-weight: ${bold ? 'bold' : 'normal'}`
+      element.style = `font-size: ${fontSize}px; color: ${color}; font-family: ${fontFamily}; font-weight: ${bold ? 'bold' : 'normal'}`
       element.click = this.clickable
+      element.style.width = element.offsetWidth + 'px'
 
       // baseSpeed 定义为多长时间移动 1px, 一般宽度为1580px, 假定15s跑完, 则此值为 15000/1580 = 9.5
       // 此值不会因为窗口变化而变化, 所以是经验向数值
       const baseSpeed = 9.5
       const speed = baseSpeed * (1 / (this.danmukuConfig.Speed / 50))
 
-      const height = element.clientHeight
+      if (position === '0') {
+        element = this.createRollDanmuku(element)
+      } else {
+        element = this.createStillDanmuku(element, position)
+      }
+
+      this.danmukuMoveAnime(element, position === '0', speed)
+      this.danmukuItemList.push(element)
+      // element.addEventListener('webkitAnimationEnd', () => {
+      //   this.$refs.danmukuContainer.removeChild(element)
+      // })
+    },
+    createRollDanmuku (element) {
+      element.className = 'danmukuRollItem'
+
+      const height = element.offsetHeight
       let step = 0
       let findFlag = false
       const containerWidth = this.$refs.danmukuContainer.clientWidth
-      this.danmukuMaxStep = parseInt(this.$refs.danmukuContainer.clientHeight / height)
+      this.danmukuMaxStep = parseInt((this.$refs.danmukuContainer.offsetHeight * this.danmukuConfig.Height / 100) / height)
       for (let i = 0; i <= this.danmukuMaxStep; i++) {
-        const len = this.danmukuItemList.filter(x => x.step === step && containerWidth - x.offsetLeft - x.clientWidth < x.clientWidth)
+        const len = this.danmukuItemList.filter(x => x.step === step && x.position === '0' && containerWidth - x.offsetLeft - x.clientWidth < x.clientWidth)
         if (len.length === 0) {
           findFlag = true
           break
@@ -517,24 +539,52 @@ export default {
 
         element.step = this.danmukuLastStep
         step = element.step
-        if (position === '0') {
-          const arr = this.danmukuItemList.filter(x => x.step === this.danmukuLastStep)
-          const lastElement = arr[arr.length - 1]
-          const rightOffset = containerWidth - lastElement.offsetLeft - lastElement.clientWidth
-          element.style.right = `${rightOffset - lastElement.clientWidth - 5}px`
-        } else if (position === '1') {
-
-        }
+        const arr = this.danmukuItemList.filter(x => x.step === this.danmukuLastStep)
+        const lastElement = arr[arr.length - 1]
+        const rightOffset = containerWidth - lastElement.offsetLeft - lastElement.clientWidth
+        element.style.right = `${rightOffset - lastElement.clientWidth - 5}px`
       } else {
         this.danmukuLastStep = step
       }
       element.step = step
-      element.style.top = `${height * step}px`
-      this.danmukuItemList.push(element)
-      this.danmukuMoveAnime(element, position === '0', speed)
-      // element.addEventListener('webkitAnimationEnd', () => {
-      //   this.$refs.danmukuContainer.removeChild(element)
-      // })
+      element.style.top = `${step * height}px`
+      return element
+    },
+    createStillDanmuku (element, position) {
+      element.className = 'danmukuStillItem'
+
+      const height = element.offsetHeight
+      let step = 0
+      let findFlag = false
+      const danmukuMaxStepVertical = parseInt((this.$refs.danmukuContainer.offsetHeight * 0.45) / height)
+      for (let i = 0; i <= danmukuMaxStepVertical; i++) {
+        const len = this.danmukuItemList.filter(x => x.step === step && x.position === position)
+        if (len.length === 0) {
+          findFlag = true
+          break
+        } else {
+          step++
+        }
+      }
+      if (!findFlag) {
+        if (this.danmukuLastStep === danmukuMaxStepVertical) {
+          this.danmukuLastStep = 0
+        } else {
+          this.danmukuLastStep++
+        }
+
+        element.step = this.danmukuLastStep
+        step = element.step
+      } else {
+        this.danmukuLastStep = step
+      }
+      element.step = step
+      if (position === '1') {
+        element.style.top = `${step * height}px`
+      } else {
+        element.style.bottom = `${step * height}px`
+      }
+      return element
     },
     danmukuMoveAnime (element, isRoll, speed) {
       if (!isRoll) {
@@ -589,11 +639,17 @@ export default {
   from {right: 0;}
   to {right: 140%;}
 }
-.danmukuItem {
+.danmukuRollItem {
   /* animation: danmukuAnime 10s linear; */
   position: absolute;
   right: 0px;
   transform: translate(100%);
+}
+.danmukuStillItem {
+  /* animation: danmukuAnime 10s linear; */
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%);
 }
 </style>
 
