@@ -29,19 +29,19 @@
       <div id="videoToolBar" v-bind:class="{'toolbarInactive': !toolbarActive}">
         <v-tooltip top color="rgba(100,100,100,.5)">
           <template v-slot:activator="{ on, attrs }">
-            <v-btn v-on="on" v-bind="attrs" icon @click="playStatusChange"><v-icon>{{playButtonIcon}}</v-icon></v-btn>
+            <v-btn dark v-on="on" v-bind="attrs" icon @click="playStatusChange"><v-icon>{{playButtonIcon}}</v-icon></v-btn>
           </template>
           <span>{{playStatus?'暂停': '播放'}}</span>
         </v-tooltip>
         <v-tooltip top>
           <template v-slot:activator="{ on, attrs }">
-            <v-btn v-on="on" v-bind="attrs" icon @click="reconnect"><v-icon>mdi-refresh</v-icon></v-btn>
+            <v-btn dark v-on="on" v-bind="attrs" icon @click="reconnect"><v-icon>mdi-refresh</v-icon></v-btn>
           </template>
           <span>重新连接</span>
         </v-tooltip>
         <v-hover v-slot="{ hover }">
           <div id="volControl">
-            <v-btn icon @click="volClick">
+            <v-btn dark icon @click="volClick">
               <v-icon>{{volIcon}}</v-icon>
             </v-btn>
             <v-fade-transition>
@@ -54,7 +54,7 @@
         <v-spacer></v-spacer>
         <v-tooltip top>
           <template v-slot:activator="{ on, attrs }">
-            <v-btn v-on="on" v-bind="attrs" icon @click="danmukuSenderControlBoxShow=!danmukuSenderControlBoxShow"><v-icon>mdi-alpha-a-box-outline</v-icon></v-btn>
+            <v-btn dark v-on="on" v-bind="attrs" icon @click="danmukuSenderControlBoxShow=!danmukuSenderControlBoxShow"><v-icon>mdi-alpha-a-box-outline</v-icon></v-btn>
           </template>
           <span>弹幕设置</span>
         </v-tooltip>
@@ -89,7 +89,7 @@
           <input :disabled="!showDanmuku" v-model="danmukuInput" @keydown.enter="sendDanmuku" type="text" class="normalInput" @focus="inputOnFocus" @blur="inputOnBlur" ref="danmukuSender">
           <v-tooltip top>
             <template v-slot:activator="{ on, attrs }">
-              <v-btn @click="sendDanmuku" v-on="on" v-bind="attrs" :color="danmukuSenderColor" style="color: white;">{{danmukuSenderText}}</v-btn>
+              <v-btn dark @click="sendDanmuku" v-on="on" v-bind="attrs" :color="danmukuSenderColor" style="color: white;">{{danmukuSenderText}}</v-btn>
             </template>
             <span>发送弹幕</span>
           </v-tooltip>
@@ -97,13 +97,13 @@
         <v-spacer></v-spacer>
         <v-tooltip top>
           <template v-slot:activator="{ on, attrs }">
-            <v-btn @click="showDanmukuChange" v-on="on" v-bind="attrs" icon><v-icon>{{danmukuSwitchIcon}}</v-icon></v-btn>
+            <v-btn dark @click="showDanmukuChange" v-on="on" v-bind="attrs" icon><v-icon>{{danmukuSwitchIcon}}</v-icon></v-btn>
           </template>
           <span>{{showDanmuku?'关闭':'打开'}}弹幕</span>
         </v-tooltip>
         <v-hover v-slot="{ hover }">
           <div>
-            <v-btn icon><v-icon>mdi-message-question-outline</v-icon></v-btn>
+            <v-btn dark icon><v-icon>mdi-message-question-outline</v-icon></v-btn>
             <v-fade-transition>
               <div v-if="hover" id="danmukuControlBox" class="popBox">
                 <v-checkbox :color="$vuetify.theme.themes.light.primary" dark dense height="15" label="弹幕屏蔽生效开关" v-model="danmukuBlocker.switch"></v-checkbox>
@@ -161,7 +161,7 @@
         </v-hover>
         <v-hover v-slot="{ hover }">
           <div>
-            <v-btn icon><v-icon>mdi-message-cog-outline</v-icon></v-btn>
+            <v-btn dark icon><v-icon>mdi-message-cog-outline</v-icon></v-btn>
             <v-fade-transition>
               <div v-if="holdHover||hover" id="danmukuControlBox" class="popBox">
                 <v-container style="display: flex;align-items: baseline;">
@@ -186,21 +186,24 @@
         </v-hover>
         <v-tooltip top>
           <template v-slot:activator="{ on, attrs }">
-            <v-btn v-on="on" v-bind="attrs" icon><v-icon>mdi-overscan</v-icon></v-btn>
+            <v-btn dark v-on="on" v-bind="attrs" icon><v-icon>mdi-overscan</v-icon></v-btn>
           </template>
           <span>拉伸</span>
         </v-tooltip>
         <v-tooltip top>
           <template v-slot:activator="{ on, attrs }">
-            <v-btn v-on="on" v-bind="attrs" icon @click="callScreenFull"><v-icon>mdi-fullscreen</v-icon></v-btn>
+            <v-btn dark v-on="on" v-bind="attrs" icon @click="callScreenFull"><v-icon>mdi-fullscreen</v-icon></v-btn>
           </template>
           <span>全屏</span>
         </v-tooltip>
       </div>
     </div>
-    <div id="danmukuListContainer" v-bind:class="{'danmukuListHidden': !danmukuListShow}">
+    <div id="danmukuListContainer" v-bind:class="{'danmukuListHidden': !danmukuListShow}"  @mousedown.right.stop="showMenu($event, true, -1)">
       <v-list subheader id="danmukuList" class="slimScrollbar">
-        <v-subheader>弹幕列表</v-subheader>
+        <v-subheader>
+          弹幕列表
+          <v-btn icon light @click="clickable"><v-icon>mdi-delete</v-icon></v-btn>
+        </v-subheader>
         <v-list-item v-for="item in danmukuList" :key="item.id" dense style="flex-wrap: wrap;" @mousedown.right.stop="showMenu($event, true, item.id)">
           <span style="color:skyblue">
             [{{timeFormat(item.time)}}]
@@ -209,11 +212,11 @@
         </v-list-item>
         <v-menu v-model="menuDanmuku" :position-x="menuX" :position-y="menuY" absolute offset-y>
           <v-list min-width="150px" dark style="background-color: rgba(100,100,100,.8);">
-            <v-list-item @click="clickable">复制{{currentDanmuku.content}}</v-list-item>
-            <v-list-item @click="clickable">添加好友</v-list-item>
-            <v-list-item @click="clickable">复读</v-list-item>
+            <v-list-item :disabled="currentDanmuku==null" @click="callCopy(currentDanmuku.content)">复制{{currentDanmuku==null?'':currentDanmuku.content}}</v-list-item>
+            <v-list-item :disabled="currentDanmuku==null" @click="clickable">添加好友</v-list-item>
+            <v-list-item :disabled="currentDanmuku==null" @click="sendDanmuku(currentDanmuku.content)">复读</v-list-item>
             <v-list-item dense><v-divider></v-divider></v-list-item>
-            <v-list-item @click="clickable">清空弹幕</v-list-item>
+            <v-list-item @click="clearDanmuku">清空弹幕</v-list-item>
           </v-list>
         </v-menu>
         <div id="danmukuBottom"></div>
@@ -223,11 +226,12 @@
 </template>
 
 <script>
-import { loadLocalConfig, writeLocalConfig } from '@/utils/tools'
+import { loadLocalConfig, writeLocalConfig, copyText } from '@/utils/tools'
 import moment from 'moment'
 import { Info, Confirm } from '@/utils/dialog'
 import flvjs from 'flv.js'
 import { getFonts } from 'font-list'
+
 export default {
   data () {
     return {
@@ -249,7 +253,7 @@ export default {
       menuX: 0,
       menuY: 0,
       logs: [],
-      showLogs: true,
+      showLogs: false,
       roomInstance: {},
       videoPlayer: null,
       catchFrameTimer: 0,
@@ -275,7 +279,7 @@ export default {
       danmukuBlocker: {
         switch: true,
         keywords: [],
-        users: [{ name: 'aaa', id: 1 }]
+        users: []
       },
       fontList: [],
       holdHover: false,
@@ -312,6 +316,7 @@ export default {
   mounted () {
     this.server.TempGetInfoCallback = (data) => {
       this.thisWindow = require('@electron/remote').getCurrentWindow()
+      // console.log(this.thisWindow.getBackgroundThrottling())
       this.server.On('RoomEntered', this.handleRoomEnter)
       this.server.On('RoomVanish', this.handleRoomVanish)
       this.server.On('RoomClose', this.handleRoomClose)
@@ -569,7 +574,7 @@ export default {
       const speed = baseSpeed * (1 / (this.danmukuConfig.Speed / 50))
 
       if (position === '0') {
-        element = this.createRollDanmuku(element)
+        element = this.createMoveDanmuku(element)
       } else {
         element = this.createStillDanmuku(element, position)
       }
@@ -580,8 +585,8 @@ export default {
       //   this.$refs.danmukuContainer.removeChild(element)
       // })
     },
-    createRollDanmuku (element) {
-      element.classList.add('danmukuRollItem')
+    createMoveDanmuku (element) {
+      element.classList.add('danmukuMoveItem')
 
       const height = element.offsetHeight
       let step = 0
@@ -734,6 +739,12 @@ export default {
             break
         }
       }
+    },
+    callCopy (text) {
+      copyText(text)
+    },
+    clearDanmuku () {
+      this.danmukuList = []
     }
   },
   beforeDestroy () {
@@ -754,7 +765,7 @@ export default {
   /* -webkit-text-stroke: 1px white; */
   /* text-shadow: 1px 1px #fff; */
 }
-.danmukuRollItem {
+.danmukuMoveItem {
   right: 0px;
   transform: translate(100%);
 }
@@ -880,9 +891,9 @@ export default {
 .spacer {
   height: 100%;
 }
-.v-icon{
+/* .v-icon{
   color: white !important;
-}
+} */
 #videoContainer{
   background-color: black;
   width: 100%;

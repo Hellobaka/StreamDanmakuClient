@@ -5,6 +5,7 @@ const path = require('path')
 
 const { app, session } = require('@electron/remote')
 import store from '@/store'
+import { clipboard } from 'electron'
 
 const md5 = require('js-md5')
 const SALT = 'I AM FW'
@@ -81,6 +82,11 @@ export async function readSessionStorage (key) {
   // return JSON.parse(Cookies.get(key) || null)
   // return app.global.Application[key]
 }
+export function copyText (text) {
+  clipboard.writeText(text)
+  this.snackbar.Success('复制成功')
+}
+
 export function getTemplateConfig () {
   const Config = {
     LoginConfig: {

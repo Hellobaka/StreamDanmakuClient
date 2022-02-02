@@ -1,13 +1,13 @@
 <template>
   <v-app id="frameMain">
     <v-app-bar app dense class="draggable" id="toolBar" ref="header">
-      <span style="font-size: 15px;" @mousedown="copyText(roomInstance.InviteCode)">房间邀请码: {{roomInstance.InviteCode}}
+      <span style="font-size: 15px;" @mousedown="callCopy(roomInstance.InviteCode)">房间邀请码: {{roomInstance.InviteCode}}
         <div :style="`margin-left: 10px;float:right;width: 20px; height: 20px; border: 1px solid white; border-radius: 50%; background-color: ${serverConnected?'green':'coral'}`"></div>
       </span>
       <v-spacer></v-spacer>
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
-          <v-btn ref="copyInviteCode" icon @click="copyText(roomInstance.InviteCode)" v-bind="attrs" v-on="on"><v-icon>mdi-clipboard-text</v-icon></v-btn>
+          <v-btn ref="copyInviteCode" icon @click="callCopy(roomInstance.InviteCode)" v-bind="attrs" v-on="on"><v-icon>mdi-clipboard-text</v-icon></v-btn>
         </template>
         <span>复制邀请码</span>
       </v-tooltip>
@@ -39,9 +39,9 @@
     <v-main class="halfTransplant" ref="danmukuList">
       <v-menu v-model="menu" :position-x="menuX" :position-y="menuY" absolute offset-y>
         <v-list dark style="background-color: rgba(100,100,100,.8);">
-          <v-list-item @click="copyText(roomInstance.InviteCode)">复制邀请码</v-list-item>
-          <v-list-item @click="copyText(pushServer)">复制推流服务器 URL</v-list-item>
-          <v-list-item @click="copyText(pushKey)">复制推流密钥</v-list-item>
+          <v-list-item @click="callCopy(roomInstance.InviteCode)">复制邀请码</v-list-item>
+          <v-list-item @click="callCopy(pushServer)">复制推流服务器 URL</v-list-item>
+          <v-list-item @click="callCopy(pushKey)">复制推流密钥</v-list-item>
           <v-list-item @click="clearDanmuku">清空弹幕池</v-list-item>
         </v-list>
       </v-menu>
@@ -90,10 +90,9 @@
 <script>
 // eslint-disable-next-line no-unused-vars
 import { screen, Tray, Menu } from '@electron/remote'
-import { loadLocalConfig } from '@/utils/tools'
+import { loadLocalConfig, copyText } from '@/utils/tools'
 import { Confirm } from '@/utils/dialog'
 import moment from 'moment'
-import { clipboard } from 'electron'
 
 export default {
   data () {
@@ -342,12 +341,11 @@ export default {
       })
     },
     clickable () {},
-    copyText (text) {
-      clipboard.writeText(text)
-      this.snackbar.Success('复制成功')
-    },
     clearDanmuku () {
       this.danmukuList = []
+    },
+    callCopy (text) {
+      copyText(text)
     },
     sendDanmuku () {
       if (this.danmukuInput === '') {
