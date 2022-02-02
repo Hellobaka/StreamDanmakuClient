@@ -25,7 +25,8 @@ export async function createChildWindow (url, client = true) {
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
       nodeIntegration: true,
       contextIsolation: false,
-      enableRemoteModule: true
+      enableRemoteModule: true,
+      backgroundThrottling: false
     }
   })
   await writeSessionStorage('StreamFlag', true)
