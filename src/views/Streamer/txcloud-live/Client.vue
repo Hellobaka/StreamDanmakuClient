@@ -202,11 +202,14 @@
       <v-list subheader id="danmukuList" class="slimScrollbar">
         <v-subheader>
           弹幕列表
-          <v-btn icon light @click="clickable"><v-icon>mdi-delete</v-icon></v-btn>
+          <v-btn icon light @click="clearDanmuku"><v-icon>mdi-delete</v-icon></v-btn>
         </v-subheader>
         <v-list-item v-for="item in danmukuList" :key="item.id" dense style="flex-wrap: wrap;" @mousedown.right.stop="showMenu($event, true, item.id)">
-          <span style="color:skyblue">
-            [{{timeFormat(item.time)}}]
+          <span v-if="item.log" style="color:skyblue">
+            <v-icon small color="#66ccff">mdi-wrench</v-icon>
+          </span>
+          <span v-if="!item.log" style="color:skyblue">
+            {{item.name}}:
           </span>
           <span style="word-break: break-all;word-wrap: break-word;overflow: auto;">{{item.content}}</span>
         </v-list-item>
@@ -320,6 +323,7 @@ export default {
       this.server.On('RoomEntered', this.handleRoomEnter)
       this.server.On('RoomVanish', this.handleRoomVanish)
       this.server.On('RoomClose', this.handleRoomClose)
+      this.server.On('OnDanmuku', this.handleDanmuku)
       this.server.Emit('RoomEntered', { id: this.$route.query.id })
     }
     this.server.CallStreamGetInfo()
@@ -425,19 +429,20 @@ export default {
         if (this.danmukuCD === 0) return
         this.danmukuCD--
       }, 1000)
-      this.server.On('Danmuku', data => {
+      this.server.On('SendDanmuku', data => {
         if (data.code === 200) {
           this.AddDanmuku(this.danmukuInput, this.danmukuConfig.Color, this.danmukuConfig.Position)
+          this.danmukuInput = ''
         } else {
           this.snackbar.Error(data.msg)
         }
       })
-      this.server.Emit('Danmuku', {
+      this.server.Emit('SendDanmuku', {
         content: this.danmukuInput,
-        color: '#ffffff'
+        color: this.danmukuConfig.Color,
+        position: this.danmukuConfig.Position
       })
       this.AddDanmuku(this.danmukuInput, this.danmukuConfig.Color, this.danmukuConfig.Position)
-      this.danmukuInput = ''
     },
     showDanmukuChange () {
       this.showDanmuku = !this.showDanmuku
@@ -628,7 +633,7 @@ export default {
       const height = element.offsetHeight
       let step = 0
       let findFlag = false
-      const danmukuMaxStepVertical = parseInt((this.$refs.danmukuContainer.offsetHeight * 0.45) / height)
+      const danmukuMaxStepVertical = parseInt((this.$refs.danmukuContainer.offsetHeight) / height)
       for (let i = 0; i <= danmukuMaxStepVertical; i++) {
         const len = this.danmukuItemList.filter(x => x.step === step && x.position === position)
         if (len.length === 0) {
@@ -685,7 +690,6 @@ export default {
       if (this.danmukuList.length > this.maxDanmukuCount) {
         this.danmukuList.splice(0, 1)
       }
-      this.danmukuList.push({ id: this.danmukuID, content, color, position, time: new Date().getTime() })
       this.danmukuID++
       this.$nextTick(() => {
         document.querySelector('#danmukuBottom').scrollIntoView()
@@ -745,6 +749,26 @@ export default {
     },
     clearDanmuku () {
       this.danmukuList = []
+    },
+    handleDanmuku (data) {
+      const item = data.data
+      if (this.danmukuBlocker.keywords.length > 0) {
+        for (let i = 0; i < this.danmukuBlocker.keywords.length; i++) {
+          if (item.content.indexOf(this.danmukuBlocker.keywords[i]) !== -1) {
+            return
+          }
+        }
+      }
+      if (this.danmukuBlocker.users.length > 0) {
+        for (let i = 0; i < this.danmukuBlocker.users.length; i++) {
+          if (item.userID.indexOf(this.danmukuBlocker.users[i]) !== -1) {
+            return
+          }
+        }
+      }
+      item.log = false
+      this.danmukuList.push(item)
+      this.AddDanmuku(item.content, item.color, item.position)
     }
   },
   beforeDestroy () {

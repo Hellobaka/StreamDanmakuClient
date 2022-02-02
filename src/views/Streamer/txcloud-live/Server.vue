@@ -47,9 +47,12 @@
       </v-menu>
       <div @mousedown.right.stop="showMenu">
         <v-list :style="`background: transparent;overflow-y: scroll;height:${listHeight}px;`" id="danmukuList">
-          <v-list-item v-for="item in danmukuList" :key="item.id" dense style="flex-wrap: wrap;" @mousedown.right.stop="showMenu($event, true)">
+          <v-list-item v-for="item in danmukuList" :key="item.id" dense @mousedown.right.stop="showMenu($event, true)">
             <span v-if="item.log" style="color:skyblue">
-              [{{timeFormat(item.time)}}]
+              <v-icon small color="#66ccff">mdi-wrench</v-icon>
+            </span>
+            <span v-if="!item.log" style="color:skyblue">
+              {{item.name}}:
             </span>
             <span style="word-break: break-all;word-wrap: break-word;overflow: auto;">{{item.content}}</span>
           </v-list-item>
@@ -122,6 +125,8 @@ export default {
       startTime: 0,
       nowTime: 0,
       danmukuInput: '',
+      danmukuColor: '#FFFFFF',
+      danmukuPosition: '0',
       danmukuInputFlag: false
     }
   },
@@ -155,12 +160,6 @@ export default {
   beforeMount () {
     var momentDurationFormatSetup = require('moment-duration-format')
     momentDurationFormatSetup(moment)
-  },
-  mounted () {
-    setInterval(() => {
-      this.nowTime = new Date().getTime()
-    }, 1000)
-    this.$vuetify.theme.dark = true
     this.server.TempGetInfoCallback = (data) => {
       this.thisWindow = require('@electron/remote').getCurrentWindow()
       this.init()
@@ -193,11 +192,22 @@ export default {
         }
       })
       this.server.Emit('RoomInfo', '')
+      this.server.On('OnDanmuku', data => {
+        data.id = this.danmukuList.length
+        data.log = false
+        this.danmukuList.push(data)
+      })
     }
+  },
+  mounted () {
+    setInterval(() => {
+      this.nowTime = new Date().getTime()
+    }, 1000)
+    this.$vuetify.theme.dark = true
   },
   methods: {
     timeFormat (time) {
-      return moment(time).format('yyyy-MM-DD HH:mm:ss')
+      return moment(time).format('HH:mm:ss')
     },
     writeLog (content) {
       this.danmukuList.push({ id: this.danmukuList.length, content: `${content}`, time: new Date().getTime(), log: true })
@@ -348,12 +358,22 @@ export default {
       copyText(text)
     },
     sendDanmuku () {
-      if (this.danmukuInput === '') {
+      if (this.danmukuInput === '' || this.danmukuInput.trim() === '') {
         // this.snackbar.Error('请输入弹幕内容')
         return
       }
-      this.danmukuList.push({ id: this.danmukuList.length, content: `${this.danmukuInput}`, time: new Date().getTime(), log: false })
-      this.danmukuInput = ''
+      this.server.On('SendDanmuku', data => {
+        if (data.code === 200) {
+          this.danmukuInput = ''
+        } else {
+          this.snackbar.Error(data.msg)
+        }
+      })
+      this.server.Emit('SendDanmuku', {
+        content: this.danmukuInput,
+        color: this.danmukuColor,
+        position: this.danmukuPosition
+      })
     },
     inputOnFocus () {
       this.danmukuInputFlag = true
