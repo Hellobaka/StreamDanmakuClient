@@ -68,7 +68,7 @@
         @mouseover="tipNewShow = true"
         @mouseleave="tipNewShow = false"
         @click="callNewRoom"
-        style="position:absolute;right:20px;bottom:20px;"
+        style="position:fixed;right:20px;bottom:20px;"
       >
         <v-icon>mdi-plus-box-outline</v-icon>
       </v-btn>
@@ -101,7 +101,7 @@ import JoinRoom from '../components/JoinRoom.vue'
 import { Info } from '../utils/dialog'
 // eslint-disable-next-line no-unused-vars
 import { loadLocalConfig, readSessionStorage, routerJump } from '../utils/tools'
-import { createChildWindow } from '../utils/windowsHelper'
+import { createChildWindow, LoadStreamerURL } from '../utils/windowsHelper'
 export default {
   components: {
     NewRoom,
@@ -193,7 +193,9 @@ export default {
               createChildWindow(`TRTC-streamer/client?id=${id}`, true)
               break
             case 1: // 普通快直播
-              createChildWindow(`txcloud-live-streamer/client?id=${id}`, true)
+              // createChildWindow(`txcloud-live-streamer/client?id=${id}`, true)
+              // this.$router.push(`txcloud-live-streamer/client?id=${id}`)
+              LoadStreamerURL(this.$router, `txcloud-live-streamer/client?id=${id}`, true)
               break
             case 2: // 自搭
               createChildWindow(`streamer/client?id=${id}`, true)
