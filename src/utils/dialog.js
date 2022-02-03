@@ -4,10 +4,16 @@ export function Confirm (text, title) {
   return Vue.prototype.$dialog.confirm({
     text,
     title,
-    actions: [
-      { text: '否', color: 'black', key: false },
-      { text: '是', color: 'blue', key: true }
-    ]
+    actions: {
+      false: {
+        text: '否',
+        color: 'black'
+      },
+      true: {
+        text: '是',
+        color: 'primary'
+      }
+    }
   })
 }
 
