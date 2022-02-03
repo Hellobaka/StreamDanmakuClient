@@ -26,7 +26,10 @@
           style="color: white;"
         ></v-progress-circular>
       </div>
-      <div id="videoToolBar" v-bind:class="{'toolbarInactive': !toolbarActive}">
+      <div class="videoToolBar" style="top: 0;" v-bind:class="{'toolbarInactive': !toolbarActive}">
+        <v-btn dark icon @click="closeClient"><v-icon>mdi-close</v-icon></v-btn>
+      </div>
+      <div class="videoToolBar" style="bottom: 0;" v-bind:class="{'toolbarInactive': !toolbarActive}">
         <v-tooltip top color="rgba(100,100,100,.5)">
           <template v-slot:activator="{ on, attrs }">
             <v-btn dark v-on="on" v-bind="attrs" icon @click="playStatusChange"><v-icon>{{playButtonIcon}}</v-icon></v-btn>
@@ -234,6 +237,7 @@ import moment from 'moment'
 import { Info, Confirm } from '@/utils/dialog'
 import flvjs from 'flv.js'
 import { getFonts } from 'font-list'
+import { RestoreWindow } from '@/utils/windowsHelper'
 
 export default {
   data () {
@@ -317,16 +321,13 @@ export default {
     }
   },
   mounted () {
-    this.server.TempGetInfoCallback = (data) => {
-      this.thisWindow = require('@electron/remote').getCurrentWindow()
-      // console.log(this.thisWindow.getBackgroundThrottling())
-      this.server.On('RoomEntered', this.handleRoomEnter)
-      this.server.On('RoomVanish', this.handleRoomVanish)
-      this.server.On('RoomClose', this.handleRoomClose)
-      this.server.On('OnDanmuku', this.handleDanmuku)
-      this.server.Emit('RoomEntered', { id: this.$route.query.id })
-    }
-    this.server.CallStreamGetInfo()
+    this.thisWindow = require('@electron/remote').getCurrentWindow()
+    this.thisWindow.show()
+    this.server.On('RoomEntered', this.handleRoomEnter)
+    this.server.On('RoomVanish', this.handleRoomVanish)
+    this.server.On('RoomClose', this.handleRoomClose)
+    this.server.On('OnDanmuku', this.handleDanmuku)
+    this.server.Emit('RoomEntered', { id: this.$route.query.id })
     this.videoContainer = document.querySelector('#video-container')
     const timeout = 1500
     setInterval(() => {
@@ -769,10 +770,19 @@ export default {
       item.log = false
       this.danmukuList.push(item)
       this.AddDanmuku(item.content, item.color, item.position)
+    },
+    async closeClient () {
+      const res = await Confirm('不看了吗？', '确认')
+      if (res) {
+        this.thisWindow.hide()
+        this.$router.go(-1)
+      }
     }
   },
   beforeDestroy () {
+    this.$vuetify.theme.dark = false
     this.server.Emit('Leave', {})
+    RestoreWindow()
   }
 }
 </script>
@@ -815,19 +825,6 @@ export default {
   height: 100%;
   width: 100%;
 }
-.slimScrollbar::-webkit-scrollbar {
-  width : 10px;
-  height: 1px;
-}
-.slimScrollbar::-webkit-scrollbar-thumb {
-  border-radius: 10px;
-  background   : #535353;
-}
-.slimScrollbar::-webkit-scrollbar-track {
-  border-radius: 10px;
-  background   : #ededed;
-}
-
 #danmukuListContainer {
   width: 25%;
   background: whitesmoke;
@@ -925,14 +922,14 @@ export default {
   position: relative;
   z-index: 1;
 }
-#videoToolBar{
+.videoToolBar{
   padding: 0 10px;
   width: 100%;
   position: absolute;
-  bottom: 0;
   display: flex;
   margin-bottom: 5px;
   transition: .2s all linear;
+  z-index: 10;
 }
 #progressCircle {
   position: absolute;

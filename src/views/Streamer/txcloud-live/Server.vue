@@ -13,13 +13,13 @@
       </v-tooltip>
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
-          <v-btn ref="setTransplant" icon @click="setIgnoreMouse" v-bind="attrs" v-on="on" v-bind:style="ignoreMouse?'background:rgba(255,255,255,.2)':''"><v-icon>mdi-lock</v-icon></v-btn>
+          <v-btn ref="setTransplant" icon @click="setIgnoreMouse(!ignoreMouse)" v-bind="attrs" v-on="on" v-bind:style="ignoreMouse?'background:rgba(255,255,255,.2)':''"><v-icon>mdi-lock</v-icon></v-btn>
         </template>
         <span>窗口穿透</span>
       </v-tooltip>
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
-          <v-btn ref="setTop" icon @click="setTopMost" v-bind="attrs" v-on="on" v-bind:style="topMost?'background:rgba(255,255,255,.2)':''"><v-icon>mdi-dock-top</v-icon></v-btn>
+          <v-btn ref="setTop" icon @click="setTopMost(!topMost)" v-bind="attrs" v-on="on" v-bind:style="topMost?'background:rgba(255,255,255,.2)':''"><v-icon>mdi-dock-top</v-icon></v-btn>
         </template>
         <span>窗口置顶</span>
       </v-tooltip>
@@ -36,7 +36,7 @@
         <span>关闭</span>
       </v-tooltip>
     </v-app-bar>
-    <v-main class="halfTransplant" ref="danmukuList">
+    <v-main class="Transplant07" ref="danmukuList">
       <v-menu v-model="menu" :position-x="menuX" :position-y="menuY" absolute offset-y>
         <v-list dark style="background-color: rgba(100,100,100,.8);">
           <v-list-item @click="callCopy(roomInstance.InviteCode)">复制邀请码</v-list-item>
@@ -78,7 +78,7 @@
         </v-tooltip>
       </div>
     </v-main>
-    <v-footer ref="footer" class="halfTransplant" elevation="10">
+    <v-footer ref="footer" class="Transplant08" elevation="10">
       <div @mousedown.right.stop="showMenu" style="display:flex; align-items: center; width: 100%;">
         <span style="margin-right: 10px;">{{streamTime}}</span>
         <span style="margin-right: 10px;">房间内 {{onlineCount}} 人</span>
@@ -96,6 +96,7 @@ import { screen, Tray, Menu } from '@electron/remote'
 import { loadLocalConfig, copyText } from '@/utils/tools'
 import { Confirm } from '@/utils/dialog'
 import moment from 'moment'
+import { RestoreWindow } from '../../../utils/windowsHelper'
 
 export default {
   data () {
@@ -155,51 +156,59 @@ export default {
     }
   },
   beforeDestroy () {
+    this.thisWindow.off('resize', this.resizeHandler)
+    this.thisWindow.off('blur', this.blurHandler)
+    this.thisWindow.off('focus', this.focusHandler)
+    this.setIgnoreMouse(false)
+    this.setTopMost(false)
     if (this.tray) this.tray.destroy()
+    this.$vuetify.theme.dark = false
+    this.server.Emit('Leave', {})
+    RestoreWindow()
   },
   beforeMount () {
     var momentDurationFormatSetup = require('moment-duration-format')
     momentDurationFormatSetup(moment)
-    this.server.TempGetInfoCallback = (data) => {
-      this.thisWindow = require('@electron/remote').getCurrentWindow()
-      this.init()
-      this.$refs.setTop.$el.onmouseleave = () => {
-        if (this.ignoreMouse) this.thisWindow.setIgnoreMouseEvents(true, { forward: true })
-      }
-      this.$refs.setTop.$el.onmouseenter = () => {
-        this.thisWindow.setIgnoreMouseEvents(false)
-      }
-      this.$refs.setTransplant.$el.onmouseleave = this.$refs.setTop.$el.onmouseleave
-      this.$refs.setTransplant.$el.onmouseenter = this.$refs.setTop.$el.onmouseenter
-
-      if (this.tray) {
-        this.tray.destroy()
-        this.tray = null
-      }
-      this.server.On('GetPushUrl', data => {
-        this.writeLog('初始化完成，请使用OBS进行推流')
-        this.pushServer = data.data.server
-        this.pushKey = data.data.key
-        this.writeLog(`推流地址：${this.pushServer}`)
-        this.writeLog(`推流密钥：${this.pushKey}`)
-      })
-      this.server.On('RoomInfo', data => {
-        if (data.code !== 200) {
-          this.snackbar.Error(data.msg)
-        } else {
-          this.roomInstance = data.data.roomInfo
-          this.server.Emit('GetPushUrl', '')
-        }
-      })
-      this.server.Emit('RoomInfo', '')
-      this.server.On('OnDanmuku', data => {
-        data.id = this.danmukuList.length
-        data.log = false
-        this.danmukuList.push(data)
-      })
-    }
   },
   mounted () {
+    this.thisWindow = require('@electron/remote').getCurrentWindow()
+    this.init()
+    this.thisWindow.show()
+    this.$refs.setTop.$el.onmouseleave = () => {
+      if (this.ignoreMouse) this.thisWindow.setIgnoreMouseEvents(true, { forward: true })
+    }
+    this.$refs.setTop.$el.onmouseenter = () => {
+      this.thisWindow.setIgnoreMouseEvents(false)
+    }
+    this.$refs.setTransplant.$el.onmouseleave = this.$refs.setTop.$el.onmouseleave
+    this.$refs.setTransplant.$el.onmouseenter = this.$refs.setTop.$el.onmouseenter
+
+    if (this.tray) {
+      this.tray.destroy()
+      this.tray = null
+    }
+    this.server.On('GetPushUrl', data => {
+      this.writeLog('初始化完成，请使用OBS进行推流')
+      this.pushServer = data.data.server
+      this.pushKey = data.data.key
+      this.writeLog(`推流地址：${this.pushServer}`)
+      this.writeLog(`推流密钥：${this.pushKey}`)
+    })
+    this.server.On('RoomInfo', data => {
+      if (data.code !== 200) {
+        this.snackbar.Error(data.msg)
+      } else {
+        this.roomInstance = data.data.roomInfo
+        this.server.Emit('GetPushUrl', '')
+      }
+    })
+    this.server.Emit('RoomInfo', '')
+    this.server.On('OnDanmuku', data => {
+      data.id = this.danmukuList.length
+      data.log = false
+      this.danmukuList.push(data)
+    })
+
     setInterval(() => {
       this.nowTime = new Date().getTime()
     }, 1000)
@@ -222,7 +231,7 @@ export default {
           label: '窗口穿透',
           type: 'checkbox',
           click: () => {
-            this.setIgnoreMouse()
+            this.setIgnoreMouse(!this.ignoreMouse)
           },
           checked: this.ignoreMouse
         },
@@ -230,7 +239,7 @@ export default {
           label: '窗口置顶',
           type: 'checkbox',
           click: () => {
-            this.setTopMost()
+            this.setTopMost(!this.topMost)
           },
           checked: this.topMost
         },
@@ -260,40 +269,43 @@ export default {
       const winH = screen.getPrimaryDisplay().workAreaSize.height
       this.thisWindow.setPosition(parseInt(winW * 0.75), parseInt(winH * 0.15))
 
-      this.thisWindow.on('resize', () => {
-        const totalHeight = document.body.clientHeight
-        if (this.headerHeight === 0) {
-          this.headerHeight = this.$refs.header.$el.offsetHeight
-          this.footerHeight = this.$refs.footer.$el.offsetHeight
-          this.danmukuHeight = document.querySelector('#danmukuSender').offsetHeight
-        }
-        this.listHeight = totalHeight - this.headerHeight - this.footerHeight - this.danmukuHeight
-        console.log(this.listHeight)
-      })
-      this.thisWindow.on('blur', () => {
-        this.$refs.danmukuList.$el.classList.remove('Transplant07')
-        this.$refs.danmukuList.$el.classList.add('halfTransplant')
-        this.$refs.footer.$el.classList.remove('Transplant08')
-        this.$refs.footer.$el.classList.add('halfTransplant')
-      })
-      this.thisWindow.on('focus', () => {
-        this.$refs.danmukuList.$el.classList.remove('halfTransplant')
-        this.$refs.danmukuList.$el.classList.add('Transplant07')
-        this.$refs.footer.$el.classList.remove('halfTransplant')
-        this.$refs.footer.$el.classList.add('Transplant08')
-      })
+      this.thisWindow.on('resize', this.resizeHandler)
+      this.thisWindow.on('blur', this.blurHandler)
+      this.thisWindow.on('focus', this.focusHandler)
+
       this.server.On('OnLeave', this.OnLeave)
       this.server.On('OnEnter', this.OnEnter)
+    },
+    resizeHandler () {
+      const totalHeight = document.body.clientHeight
+      if (this.headerHeight === 0) {
+        this.headerHeight = this.$refs.header.$el.offsetHeight
+        this.footerHeight = this.$refs.footer.$el.offsetHeight
+        this.danmukuHeight = document.querySelector('#danmukuSender').offsetHeight
+      }
+      this.listHeight = totalHeight - this.headerHeight - this.footerHeight - this.danmukuHeight
+    },
+    blurHandler () {
+      this.$refs.danmukuList.$el.classList.remove('Transplant07')
+      this.$refs.danmukuList.$el.classList.add('halfTransplant')
+      this.$refs.footer.$el.classList.remove('Transplant08')
+      this.$refs.footer.$el.classList.add('halfTransplant')
+    },
+    focusHandler () {
+      this.$refs.danmukuList.$el.classList.remove('halfTransplant')
+      this.$refs.danmukuList.$el.classList.add('Transplant07')
+      this.$refs.footer.$el.classList.remove('halfTransplant')
+      this.$refs.footer.$el.classList.add('Transplant08')
     },
     async closeWindow () {
       const res = await Confirm('确认要结束推流吗？', '提醒')
       if (res) {
         if (this.tray) this.tray.destroy()
-        this.thisWindow.close()
+        this.$router.go(-1)
       }
     },
-    setTopMost () {
-      this.topMost = !this.topMost
+    setTopMost (flag) {
+      this.topMost = flag
       this.thisWindow.setAlwaysOnTop(this.topMost)
       this.updateMenu()
     },
@@ -305,8 +317,8 @@ export default {
         this.thisWindow.minimize()
       }
     },
-    setIgnoreMouse () {
-      this.ignoreMouse = !this.ignoreMouse
+    setIgnoreMouse (flag) {
+      this.ignoreMouse = flag
       this.thisWindow.setIgnoreMouseEvents(this.ignoreMouse, { forward: true })
       this.updateMenu()
     },
