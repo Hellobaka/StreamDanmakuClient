@@ -26,8 +26,9 @@
           style="color: white;"
         ></v-progress-circular>
       </div>
-      <div class="videoToolBar" style="top: 0;" v-bind:class="{'toolbarInactive': !toolbarActive}">
-        <v-btn dark icon @click="closeClient"><v-icon>mdi-close</v-icon></v-btn>
+      <div class="videoToolBar draggable" style="top: 0;" v-bind:class="{'toolbarInactive': !toolbarActive}">
+        <v-btn class="undraggable" dark icon @click="closeClient"><v-icon>mdi-close</v-icon></v-btn>
+        <span>{{roomInstance.Title}}</span>
       </div>
       <div class="videoToolBar" style="bottom: 0;" v-bind:class="{'toolbarInactive': !toolbarActive}">
         <v-tooltip top color="rgba(100,100,100,.5)">
@@ -207,20 +208,20 @@
           弹幕列表
           <v-btn icon light @click="clearDanmuku"><v-icon>mdi-delete</v-icon></v-btn>
         </v-subheader>
-        <v-list-item v-for="item in danmukuList" :key="item.id" dense style="flex-wrap: wrap;" @mousedown.right.stop="showMenu($event, true, item.id)">
+        <v-list-item v-for="item in danmukuList" :key="item.id" dense style="flex-wrap: wrap;" @mousedown.right.stop="showMenu($event, true, item)">
           <span v-if="item.log" style="color:skyblue">
             <v-icon small color="#66ccff">mdi-wrench</v-icon>
           </span>
           <span v-if="!item.log" style="color:skyblue">
-            {{item.name}}:
+            {{item.SenderUserName}}:
           </span>
-          <span style="word-break: break-all;word-wrap: break-word;overflow: auto;">{{item.content}}</span>
+          <span style="word-break: break-all;word-wrap: break-word;overflow: auto;">{{item.Content}}</span>
         </v-list-item>
         <v-menu v-model="menuDanmuku" :position-x="menuX" :position-y="menuY" absolute offset-y>
           <v-list min-width="150px" dark style="background-color: rgba(100,100,100,.8);">
-            <v-list-item :disabled="currentDanmuku==null" @click="callCopy(currentDanmuku.content)">复制{{currentDanmuku==null?'':currentDanmuku.content}}</v-list-item>
+            <v-list-item :disabled="currentDanmuku==null" @click="callCopy(currentDanmuku.Content)">复制{{currentDanmuku==null?'':currentDanmuku.Content}}</v-list-item>
             <v-list-item :disabled="currentDanmuku==null" @click="clickable">添加好友</v-list-item>
-            <v-list-item :disabled="currentDanmuku==null" @click="sendDanmuku(currentDanmuku.content)">复读</v-list-item>
+            <v-list-item :disabled="currentDanmuku==null" @click="sendDanmuku(currentDanmuku.Content)">复读</v-list-item>
             <v-list-item dense><v-divider></v-divider></v-list-item>
             <v-list-item @click="clearDanmuku">清空弹幕</v-list-item>
           </v-list>
@@ -382,15 +383,13 @@ export default {
 
       this.server.Emit('RoomEntered', { id: this.$route.query.id })
     },
-    showMenu (e, isDanmukuMenu = false, id = 0) {
+    showMenu (e, isDanmukuMenu = false, danmuku = {}) {
       e.preventDefault()
       this.menu = false
       this.menuDanmuku = false
       this.menuX = e.clientX
       this.menuY = e.clientY
-      if (isDanmukuMenu) {
-        this.currentDanmuku = this.danmukuList.find(x => x.id === id)
-      }
+      this.currentDanmuku = danmuku
       this.$nextTick(() => {
         if (isDanmukuMenu) {
           this.menuDanmuku = true
@@ -415,12 +414,12 @@ export default {
         }, 2500)
       }
       this.showLogs = true
-      this.logs.push({ id: this.logs.length, content: `[${moment().format('yyyy-MM-DD HH:mm:ss')}] ${log}`, time: new Date().getTime() })
+      this.logs.push({ id: this.logs.length, Content: `[${moment().format('yyyy-MM-DD HH:mm:ss')}] ${log}`, Time: new Date().getTime() })
       this.$nextTick(() => {
         document.querySelector('#logBottom').scrollIntoView()
       })
     },
-    sendDanmuku () {
+    sendDanmuku ($event, content) {
       if (this.danmukuCD || !this.showDanmuku) return
       if (this.danmukuCDTimer) {
         clearInterval(this.danmukuCDTimer)
@@ -430,20 +429,20 @@ export default {
         if (this.danmukuCD === 0) return
         this.danmukuCD--
       }, 1000)
+      const danmuku = content || this.danmukuInput
       this.server.On('SendDanmuku', data => {
         if (data.code === 200) {
-          this.AddDanmuku(this.danmukuInput, this.danmukuConfig.Color, this.danmukuConfig.Position)
-          this.danmukuInput = ''
+          this.AddDanmuku(danmuku, this.danmukuConfig.Color, this.danmukuConfig.Position)
+          if (!content) this.danmukuInput = ''
         } else {
           this.snackbar.Error(data.msg)
         }
       })
       this.server.Emit('SendDanmuku', {
-        content: this.danmukuInput,
+        content: danmuku,
         color: this.danmukuConfig.Color,
         position: this.danmukuConfig.Position
       })
-      this.AddDanmuku(this.danmukuInput, this.danmukuConfig.Color, this.danmukuConfig.Position)
     },
     showDanmukuChange () {
       this.showDanmuku = !this.showDanmuku
@@ -564,7 +563,7 @@ export default {
     danmukuListToggle () {
       this.danmukuListShow = !this.danmukuListShow
     },
-    createDanmukuElement (text, color, position = '0', fontSize = 20, bold = true, fontFamily = 'Microsoft YaHei') {
+    createDanmukuElement (text, color, position = 0, fontSize = 20, bold = true, fontFamily = 'Microsoft YaHei') {
       let element = document.createElement('span')
       this.$refs.danmukuContainer.appendChild(element)
       element.position = position
@@ -579,13 +578,13 @@ export default {
       const baseSpeed = 9.5
       const speed = baseSpeed * (1 / (this.danmukuConfig.Speed / 50))
 
-      if (position === '0') {
+      if (position === 0) {
         element = this.createMoveDanmuku(element)
       } else {
         element = this.createStillDanmuku(element, position)
       }
 
-      this.danmukuMoveAnime(element, position === '0', speed)
+      this.danmukuMoveAnime(element, position === 0, speed)
       this.danmukuItemList.push(element)
       // element.addEventListener('webkitAnimationEnd', () => {
       //   this.$refs.danmukuContainer.removeChild(element)
@@ -657,7 +656,7 @@ export default {
         this.danmukuLastStep = step
       }
       element.step = step
-      if (position === '1') {
+      if (position === 1) {
         element.style.top = `${step * height}px`
       } else {
         element.style.bottom = `${step * height}px`
@@ -687,6 +686,7 @@ export default {
       }, speed)
     },
     AddDanmuku (content, color, position) {
+      position = parseInt(position)
       if (!this.showDanmuku) return
       if (this.danmukuList.length > this.maxDanmukuCount) {
         this.danmukuList.splice(0, 1)
@@ -752,24 +752,23 @@ export default {
       this.danmukuList = []
     },
     handleDanmuku (data) {
-      const item = data.data
       if (this.danmukuBlocker.keywords.length > 0) {
         for (let i = 0; i < this.danmukuBlocker.keywords.length; i++) {
-          if (item.content.indexOf(this.danmukuBlocker.keywords[i]) !== -1) {
+          if (data.Content.indexOf(this.danmukuBlocker.keywords[i]) !== -1) {
             return
           }
         }
       }
       if (this.danmukuBlocker.users.length > 0) {
         for (let i = 0; i < this.danmukuBlocker.users.length; i++) {
-          if (item.userID.indexOf(this.danmukuBlocker.users[i]) !== -1) {
+          if (data.SenderUserID.indexOf(this.danmukuBlocker.users[i]) !== -1) {
             return
           }
         }
       }
-      item.log = false
-      this.danmukuList.push(item)
-      this.AddDanmuku(item.content, item.color, item.position)
+      data.log = false
+      this.danmukuList.push(data)
+      this.AddDanmuku(data.Content, data.Color, data.Position)
     },
     async closeClient () {
       const res = await Confirm('不看了吗？', '确认')

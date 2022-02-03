@@ -47,21 +47,21 @@
       </v-menu>
       <div @mousedown.right.stop="showMenu">
         <v-list :style="`background: transparent;overflow-y: scroll;height:${listHeight}px;`" id="danmukuList">
-          <v-list-item v-for="item in danmukuList" :key="item.id" dense @mousedown.right.stop="showMenu($event, true)">
+          <v-list-item v-for="item in danmukuList" :key="item.id" dense @mousedown.right.stop="showMenu($event, true, item)">
             <span v-if="item.log" style="color:skyblue">
               <v-icon small color="#66ccff">mdi-wrench</v-icon>
             </span>
             <span v-if="!item.log" style="color:skyblue">
-              {{item.name}}:
+              {{item.SenderUserName}} :
             </span>
-            <span style="word-break: break-all;word-wrap: break-word;overflow: auto;">{{item.content}}</span>
+            <span style="word-break: break-all;word-wrap: break-word;overflow: auto;">{{item.Content}}</span>
           </v-list-item>
         </v-list>
         <v-menu v-model="menuDanmuku" :position-x="menuX" :position-y="menuY" absolute offset-y>
           <v-list min-width="150px" dark style="background-color: rgba(100,100,100,.8);">
-            <v-list-item @click="clickable">复制</v-list-item>
+            <v-list-item @click="callCopy(item.content)">复制</v-list-item>
             <v-list-item @click="clickable">添加好友</v-list-item>
-            <v-list-item @click="clickable">复读</v-list-item>
+            <v-list-item @click="sendDanmuku(item.content)">复读</v-list-item>
             <v-list-item dense><v-divider></v-divider></v-list-item>
             <v-list-item @click="clickable">禁言用户</v-list-item>
             <v-list-item @click="clickable">踢出</v-list-item>
@@ -125,6 +125,7 @@ export default {
       pushKey: '',
       startTime: 0,
       nowTime: 0,
+      currentDanmuku: {},
       danmukuInput: '',
       danmukuColor: '#FFFFFF',
       danmukuPosition: '0',
@@ -208,6 +209,8 @@ export default {
       data.log = false
       this.danmukuList.push(data)
     })
+    this.server.On('OnLeave', this.OnLeave)
+    this.server.On('OnEnter', this.OnEnter)
 
     setInterval(() => {
       this.nowTime = new Date().getTime()
@@ -219,7 +222,7 @@ export default {
       return moment(time).format('HH:mm:ss')
     },
     writeLog (content) {
-      this.danmukuList.push({ id: this.danmukuList.length, content: `${content}`, time: new Date().getTime(), log: true })
+      this.danmukuList.push({ id: this.danmukuList.length, Content: `${content}`, Time: new Date().getTime(), log: true })
     },
     updateMenu () {
       // this.tray.setToolTip('vue-cli-electron')
@@ -272,9 +275,6 @@ export default {
       this.thisWindow.on('resize', this.resizeHandler)
       this.thisWindow.on('blur', this.blurHandler)
       this.thisWindow.on('focus', this.focusHandler)
-
-      this.server.On('OnLeave', this.OnLeave)
-      this.server.On('OnEnter', this.OnEnter)
     },
     resizeHandler () {
       const totalHeight = document.body.clientHeight
@@ -333,6 +333,7 @@ export default {
     async switchRoomPublic () {
       if (!this.roomPublicFlag) {
         const res = await Confirm('点击确定将开始直播', '提示')
+        console.log(res)
         if (res) {
           this.danmukuList = []
           this.server.On('SwitchStream', data => {
@@ -352,8 +353,9 @@ export default {
         }
       }
     },
-    showMenu (e, isDanmuku = false) {
+    showMenu (e, isDanmuku = false, danmuku = {}) {
       e.preventDefault()
+      this.currentDanmuku = danmuku
       this.menu = false
       this.menuDanmuku = false
       this.menuX = e.clientX
@@ -369,20 +371,21 @@ export default {
     callCopy (text) {
       copyText(text)
     },
-    sendDanmuku () {
+    sendDanmuku ($event, content) {
       if (this.danmukuInput === '' || this.danmukuInput.trim() === '') {
         // this.snackbar.Error('请输入弹幕内容')
         return
       }
+      const danmuku = content || this.danmukuInput
       this.server.On('SendDanmuku', data => {
         if (data.code === 200) {
-          this.danmukuInput = ''
+          if (!content) this.danmukuInput = ''
         } else {
           this.snackbar.Error(data.msg)
         }
       })
       this.server.Emit('SendDanmuku', {
-        content: this.danmukuInput,
+        content: danmuku,
         color: this.danmukuColor,
         position: this.danmukuPosition
       })
