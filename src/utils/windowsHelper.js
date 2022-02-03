@@ -8,6 +8,7 @@ export function LoadStreamerURL (router, url, isClient = false) {
   if (isClient) {
     MainWindow.setMinimumSize(850, 420)
     MainWindow.setSize(1600, 900)
+    MainWindow.center()
   } else {
     MainWindow.setMinimumSize(447, 200)
     MainWindow.setSize(450, 600)
