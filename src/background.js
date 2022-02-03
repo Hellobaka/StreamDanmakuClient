@@ -12,7 +12,6 @@ require('@electron/remote/main').initialize()
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
 ])
-
 async function createWindow () {
   // Menu.setApplicationMenu(null)
   // Create the browser window.
@@ -21,6 +20,8 @@ async function createWindow () {
     height: 700,
     minWidth: 850,
     minHeight: 420,
+    transparent: true,
+    frame: false,
     webPreferences: {
 
       // Use pluginOptions.nodeIntegration, leave this alone
@@ -28,7 +29,8 @@ async function createWindow () {
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
       contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION,
       enableRemoteModule: process.env.ELECTRON_NODE_INTEGRATION,
-      backgroundThrottling: false
+      backgroundThrottling: false,
+      devTools: true
     }
   })
   app.global = {}

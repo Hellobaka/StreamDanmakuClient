@@ -1,34 +1,63 @@
 <template>
-  <v-app>
-    <v-app-bar
-      app
-      color="primary"
-      dark
-    >
+  <v-app style="border-radius: 10px;">
+    <v-app-bar dense dark app color="accent" class="draggable" style="border-radius: 10px 10px 0 0;">
       <div class="d-flex align-center">
         <v-icon
+          class="undraggable"
           slot="icon"
           size="36"
           @click="$router.go(-1)"
         >
           mdi-arrow-left
         </v-icon>
+        <h3>{{$route.name}}</h3>
       </div>
-      <h3>{{$route.name}}</h3>
       <v-spacer></v-spacer>
-      <v-avatar class="clickable" @click="globalSettingOn = true">
-        <v-icon>
-          mdi-cog
-        </v-icon>
-      </v-avatar>
-      <v-avatar class="clickable" color="indigo" @click="OpenUserCenter">
-        <v-icon dark>
-          mdi-account-circle
-        </v-icon>
-      </v-avatar>
+      <v-btn class="undraggable" icon @click="minimize"><v-icon>mdi-minus</v-icon></v-btn>
+      <v-btn class="undraggable" icon @click="closeApplication"><v-icon>mdi-close</v-icon></v-btn>
     </v-app-bar>
 
     <v-main>
+      <v-toolbar dense elevation="2" style="z-index: 2;position: sticky;top: 48px;">
+        <v-menu offset-y min-width="100px">
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn plain v-bind="attrs" v-on="on">
+              页面
+            </v-btn>
+          </template>
+          <v-list>
+            <v-list-item @click="clickable"><v-list-item-title>上一页</v-list-item-title></v-list-item>
+            <v-list-item @click="clickable"><v-list-item-title>下一页</v-list-item-title></v-list-item>
+            <v-list-item @click="clickable" disabled><v-divider></v-divider></v-list-item>
+            <v-list-item @click="clickable"><v-list-item-title>注销</v-list-item-title></v-list-item>
+          </v-list>
+        </v-menu>
+        <v-menu offset-y min-width="100px">
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn plain v-bind="attrs" v-on="on">
+              房间
+            </v-btn>
+          </template>
+          <v-list>
+            <v-list-item @click="clickable"><v-list-item-title>加入房间</v-list-item-title></v-list-item>
+            <v-list-item @click="clickable"><v-list-item-title>刷新列表</v-list-item-title></v-list-item>
+            <v-list-item @click="clickable"><v-list-item-title>创建房间</v-list-item-title></v-list-item>
+            <v-list-item @click="clickable"><v-list-item-title>回到顶部</v-list-item-title></v-list-item>
+          </v-list>
+        </v-menu>
+        <v-spacer></v-spacer>
+        <v-avatar class="clickable" @click="globalSettingOn = true">
+          <v-icon>
+            mdi-cog
+          </v-icon>
+        </v-avatar>
+        <v-avatar size="24" class="clickable" color="indigo" @click="OpenUserCenter">
+          <v-icon dark>
+            mdi-account-circle
+          </v-icon>
+        </v-avatar>
+      </v-toolbar>
+
       <router-view />
     </v-main>
     <v-overlay :value="!ServerConnected">
@@ -83,7 +112,18 @@ export default {
           routerJump(this.$router, './', true)
         }
       }
+    },
+    clickable () {},
+    minimize () {
+      require('@electron/remote').getCurrentWindow().minimize()
+    },
+    async closeApplication () {
+      const res = await Confirm('确定要退出吗？', '确认')
+      if (res) {
+        require('@electron/remote').getCurrentWindow().close()
+      }
     }
+
   },
   async mounted () {
     this.$vuetify.theme.themes.light.primary = '#3f51b5'
