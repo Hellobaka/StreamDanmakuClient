@@ -1,6 +1,6 @@
 <template>
   <v-app style="border-radius: 10px;">
-    <v-app-bar dense dark app color="accent" class="draggable" style="border-radius: 10px 10px 0 0;">
+    <v-app-bar dense dark app color="primary" class="draggable" style="border-radius: 10px 10px 0 0;">
       <div class="d-flex align-center">
         <v-icon
           class="undraggable"
@@ -26,23 +26,35 @@
             </v-btn>
           </template>
           <v-list>
-            <v-list-item @click="clickable"><v-list-item-title>上一页</v-list-item-title></v-list-item>
-            <v-list-item @click="clickable"><v-list-item-title>下一页</v-list-item-title></v-list-item>
+            <v-list-item @click="$router.go(-1)"><v-list-item-title>上一页</v-list-item-title></v-list-item>
             <v-list-item @click="clickable" disabled><v-divider></v-divider></v-list-item>
-            <v-list-item @click="clickable"><v-list-item-title>注销</v-list-item-title></v-list-item>
+            <v-list-item @click="callLogout"><v-list-item-title>注销</v-list-item-title></v-list-item>
           </v-list>
         </v-menu>
-        <v-menu offset-y min-width="100px">
+        <v-menu offset-y min-width="100px" v-if="$route.path=='/roomList'">
           <template v-slot:activator="{ on, attrs }">
             <v-btn plain v-bind="attrs" v-on="on">
               房间
             </v-btn>
           </template>
           <v-list>
-            <v-list-item @click="clickable"><v-list-item-title>加入房间</v-list-item-title></v-list-item>
-            <v-list-item @click="clickable"><v-list-item-title>刷新列表</v-list-item-title></v-list-item>
-            <v-list-item @click="clickable"><v-list-item-title>创建房间</v-list-item-title></v-list-item>
-            <v-list-item @click="clickable"><v-list-item-title>回到顶部</v-list-item-title></v-list-item>
+            <v-list-item @click="callListener('roomList-join')"><v-list-item-title>加入房间</v-list-item-title></v-list-item>
+            <v-list-item @click="callListener('roomList-reload')"><v-list-item-title>刷新列表</v-list-item-title></v-list-item>
+            <v-list-item @click="callListener('roomList-create')"><v-list-item-title>创建房间</v-list-item-title></v-list-item>
+            <v-list-item @click="callListener('roomList-top')"><v-list-item-title>回到顶部</v-list-item-title></v-list-item>
+          </v-list>
+        </v-menu>
+        <v-menu offset-y min-width="100px" v-if="$route.path=='/txcloud-live/client'">
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn plain v-bind="attrs" v-on="on">
+              播放器
+            </v-btn>
+          </template>
+          <v-list>
+            <v-list-item @click="callListener('player-play')"><v-list-item-title>播放/停止</v-list-item-title></v-list-item>
+            <v-list-item @click="callListener('player-reload')"><v-list-item-title>重新载入</v-list-item-title></v-list-item>
+            <v-list-item @click="callListener('player-danmuku')"><v-list-item-title>打开/关闭弹幕</v-list-item-title></v-list-item>
+            <v-list-item @click="callListener('player-exit')"><v-list-item-title>退出直播间</v-list-item-title></v-list-item>
           </v-list>
         </v-menu>
         <v-spacer></v-spacer>
@@ -80,7 +92,7 @@
 <script>
 import UserCenter from '../components/UserCenter.vue'
 import GlobalSetting from '../components/GlobalSetting.vue'
-const { readSessionStorage, routerJump } = require('../utils/tools')
+const { readSessionStorage, routerJump, emit, logout } = require('../utils/tools')
 const { Confirm } = require('../utils/dialog')
 
 export default {
@@ -98,6 +110,12 @@ export default {
     config: null
   }),
   methods: {
+    async callLogout () {
+      const res = await Confirm('确认要注销吗？', '注销提醒')
+      if (res) {
+        logout(this.$router)
+      }
+    },
     init () {
       // cnm
       setInterval(() => {
@@ -122,8 +140,10 @@ export default {
       if (res) {
         require('@electron/remote').getCurrentWindow().close()
       }
+    },
+    callListener (event) {
+      emit(event)
     }
-
   },
   async mounted () {
     this.$vuetify.theme.themes.light.primary = '#3f51b5'

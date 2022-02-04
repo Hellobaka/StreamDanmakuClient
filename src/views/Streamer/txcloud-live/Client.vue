@@ -1,8 +1,8 @@
 <template>
-  <div style="display: flex;height:100%;" @mousemove="toolbarActiveChange" data-app="true">
+  <div id="clientFrame" style="display: flex;" @mousemove="toolbarActiveChange" data-app="true">
     <div id="videoContainer" @contextmenu="showMenu">
       <div class="slimScrollbar" id="logs" v-if="showLogs">
-        <p v-for="log in logs" :key="log.id">{{log.content}}</p>
+        <p v-for="log in logs" :key="log.id">{{log.Content}}</p>
         <p id="logBottom"></p>
       </div>
       <div id="danmukuContainer" ref="danmukuContainer" v-show="showDanmuku" style="position: absolute; width: 100%; z-index: 9; height:95%">
@@ -25,10 +25,6 @@
           size="64"
           style="color: white;"
         ></v-progress-circular>
-      </div>
-      <div class="videoToolBar draggable" style="top: 0;" v-bind:class="{'toolbarInactive': !toolbarActive}">
-        <v-btn class="undraggable" dark icon @click="closeClient"><v-icon>mdi-close</v-icon></v-btn>
-        <span>{{roomInstance.Title}}</span>
       </div>
       <div class="videoToolBar" style="bottom: 0;" v-bind:class="{'toolbarInactive': !toolbarActive}">
         <v-tooltip top color="rgba(100,100,100,.5)">
@@ -206,7 +202,7 @@
       <v-list subheader id="danmukuList" class="slimScrollbar">
         <v-subheader>
           弹幕列表
-          <v-btn icon light @click="clearDanmuku"><v-icon>mdi-delete</v-icon></v-btn>
+          <v-btn icon @click="clearDanmuku"><v-icon>mdi-delete</v-icon></v-btn>
         </v-subheader>
         <v-list-item v-for="item in danmukuList" :key="item.id" dense style="flex-wrap: wrap;" @mousedown.right.stop="showMenu($event, true, item)">
           <span v-if="item.log" style="color:skyblue">
@@ -233,7 +229,7 @@
 </template>
 
 <script>
-import { loadLocalConfig, writeLocalConfig, copyText } from '@/utils/tools'
+import { loadLocalConfig, writeLocalConfig, copyText, addListener, removeListener } from '@/utils/tools'
 import moment from 'moment'
 import { Info, Confirm } from '@/utils/dialog'
 import flvjs from 'flv.js'
@@ -322,6 +318,7 @@ export default {
     }
   },
   mounted () {
+    console.log(this.$route)
     this.thisWindow = require('@electron/remote').getCurrentWindow()
     this.thisWindow.show()
     this.server.On('RoomEntered', this.handleRoomEnter)
@@ -345,8 +342,35 @@ export default {
       console.log(err)
     })
     this.$vuetify.theme.dark = true
+    this.ipcInit()
   },
   methods: {
+    ipcInit () {
+      this.thisWindow.on('resize', this.resizeHandle)
+      addListener('player-play', () => {
+        this.playStatusChange()
+      })
+      addListener('player-reload', () => {
+        this.reconnect()
+      })
+      addListener('player-danmuku', () => {
+        this.showDanmukuChange()
+      })
+      addListener('player-exit', () => {
+        this.closeClient()
+      })
+    },
+    ipcOff () {
+      this.thisWindow.off('resize', this.resizeHandle)
+      removeListener('player-play')
+      removeListener('player-reload')
+      removeListener('player-danmuku')
+      removeListener('player-exit')
+    },
+    resizeHandle () {
+      const ele = document.querySelector('#clientFrame')
+      ele.style.height = `${this.thisWindow.getSize()[1] - 48 - 48}px`
+    },
     callScreenFull () {
       if (!this.screenFullFlag) {
         document.documentElement.requestFullscreen()
@@ -773,12 +797,13 @@ export default {
     async closeClient () {
       const res = await Confirm('不看了吗？', '确认')
       if (res) {
-        this.thisWindow.hide()
+        // this.thisWindow.hide()
         this.$router.go(-1)
       }
     }
   },
   beforeDestroy () {
+    this.ipcOff()
     this.$vuetify.theme.dark = false
     this.server.Emit('Leave', {})
     RestoreWindow()

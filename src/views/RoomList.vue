@@ -19,7 +19,7 @@
         <span>加入房间</span>
       </v-tooltip>
       </v-subheader>
-      <v-list-item>
+      <v-list-item id="top">
         <v-text-field v-model="filter.keyword" label="搜索" solo prepend-inner-icon="mdi-magnify" hide-details clearable @click:clear="filter.keyword=''"></v-text-field>
       </v-list-item>
       <v-list-item class="text-center">
@@ -68,7 +68,7 @@
         @mouseover="tipNewShow = true"
         @mouseleave="tipNewShow = false"
         @click="callNewRoom"
-        style="position:fixed;right:20px;bottom:20px;"
+        style="position:fixed;right:20px;bottom:90px;"
       >
         <v-icon>mdi-plus-box-outline</v-icon>
       </v-btn>
@@ -78,9 +78,16 @@
     <v-dialog v-model="newRoomDialog">
       <NewRoom @onDialogClose="newRoomDialog=false" v-if="newRoomDialog"></NewRoom>
     </v-dialog>
-    <v-dialog v-model="filterDialog">
-
-    </v-dialog>
+    <v-btn
+        id="tipNew"
+        color="primary"
+        fab
+        dark
+        @click="callTop"
+        style="position:fixed;right:20px;bottom:20px;"
+      >
+        <v-icon>mdi-arrow-collapse-up</v-icon>
+      </v-btn>
     <v-overlay :value="formSend">
       <v-progress-circular
         indeterminate
@@ -97,10 +104,7 @@ import moment from 'moment'
 import NewRoom from '../components/NewRoom.vue'
 import RoomPassword from '../components/RoomPassword.vue'
 import JoinRoom from '../components/JoinRoom.vue'
-// eslint-disable-next-line no-unused-vars
-import { Info } from '../utils/dialog'
-// eslint-disable-next-line no-unused-vars
-import { loadLocalConfig, readSessionStorage, routerJump } from '../utils/tools'
+import { loadLocalConfig, addListener, removeListener } from '../utils/tools'
 import { createChildWindow, LoadStreamerURL } from '../utils/windowsHelper'
 export default {
   components: {
@@ -195,7 +199,7 @@ export default {
             case 1: // 普通快直播
               // createChildWindow(`txcloud-live-streamer/client?id=${id}`, true)
               // this.$router.push(`txcloud-live-streamer/client?id=${id}`)
-              LoadStreamerURL(this.$router, `txcloud-live-streamer/client?id=${id}`, true)
+              LoadStreamerURL(this.$router, `txcloud-live/client?id=${id}`, true)
               break
             case 2: // 自搭
               createChildWindow(`streamer/client?id=${id}`, true)
@@ -293,7 +297,33 @@ export default {
         this.selectRoomPassword = data.password
         this.enterRoom(data.id)
       }
+    },
+    callTop () {
+      document.querySelector('#top').scrollIntoView()
+    },
+    ipcInit () {
+      addListener('roomList-join', () => {
+        this.joinRoomDialog = true
+      })
+      addListener('roomList-reload', () => {
+        this.getRoomList()
+      })
+      addListener('roomList-create', () => {
+        this.callNewRoom()
+      })
+      addListener('roomList-top', () => {
+        this.callTop()
+      })
+    },
+    ipcOff () {
+      removeListener('roomList-join')
+      removeListener('roomList-reload')
+      removeListener('roomList-create')
+      removeListener('roomList-top')
     }
+  },
+  beforeDestroy () {
+    this.ipcOff()
   },
   mounted () {
     // eslint-disable-next-line no-extend-native
@@ -328,6 +358,7 @@ export default {
       }
     })
     this.server.Emit('OnlineUserCount', '')
+    this.ipcInit()
   }
 }
 </script>

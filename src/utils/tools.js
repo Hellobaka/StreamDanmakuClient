@@ -6,6 +6,7 @@ const path = require('path')
 const { app, session } = require('@electron/remote')
 import store from '@/store'
 import { clipboard } from 'electron'
+import { Confirm } from './dialog'
 
 const md5 = require('js-md5')
 const SALT = 'I AM FW'
@@ -119,4 +120,23 @@ export function getTemplateConfig () {
 export function rulesVerify (result) {
   if (typeof result === 'string') return false
   return result
+}
+export async function logout (router) {
+  writeLocalConfig('Config', 'autoLogin', false)
+  await writeSessionStorage('LoginFlag', false)
+  await writeSessionStorage('user', null)
+  routerJump(router, './', true)
+}
+const listener = []
+export function addListener (event, callback) {
+  listener[event] = callback
+}
+export function removeListener (event) {
+  const index = listener.indexOf(event)
+  if (index !== -1) listener.splice(index, 1)
+}
+export function emit (event, ...args) {
+  if (listener[event]) {
+    listener[event](...args)
+  }
 }
