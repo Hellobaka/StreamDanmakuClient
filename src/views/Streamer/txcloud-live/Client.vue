@@ -1,5 +1,5 @@
 <template>
-  <div id="clientFrame" style="display: flex;" @mousemove="toolbarActiveChange" data-app="true">
+  <div id="clientFrame" style="display: flex;height: 802px;" @mousemove="toolbarActiveChange" data-app="true">
     <div id="videoContainer" @contextmenu="showMenu">
       <div class="slimScrollbar" id="logs" v-if="showLogs">
         <p v-for="log in logs" :key="log.id">{{log.Content}}</p>
@@ -487,9 +487,16 @@ export default {
             }
           }
         })
+        this.server.On('GetRoomDanmuku', data => {
+          if (data.code === 200) {
+            this.danmukuList = data.data
+          }
+        })
+
         this.writeLog('房间加入成功')
         this.roomInstance = data.data.roomInfo
         this.server.Emit('GetPullUrl', { type: 1 })
+        this.server.Emit('GetRoomDanmuku', '')
       }
     },
     handleRoomVanish () {
