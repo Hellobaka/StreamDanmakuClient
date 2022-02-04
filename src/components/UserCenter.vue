@@ -65,7 +65,7 @@
               <ChangePassword @onDialogClose="changePassword=false" v-if="changePassword"></ChangePassword>
             </v-dialog>
           </v-list-item>
-          <v-list-item @click="logout">
+          <v-list-item @click="callLogout">
             <v-list-item-content>
               <v-list-item-title>登出</v-list-item-title>
               <v-list-item-subtitle>将账号登出</v-list-item-subtitle>
@@ -85,7 +85,7 @@
 <script>
 import ChangeEmail from './ChangeEmail'
 import ChangePassword from './ChangePassword.vue'
-import { readSessionStorage, routerJump, writeLocalConfig, writeSessionStorage } from '../utils/tools'
+import { readSessionStorage, writeSessionStorage, logout } from '../utils/tools'
 const { Confirm } = require('../utils/dialog')
 
 export default {
@@ -105,14 +105,11 @@ export default {
     }
   },
   methods: {
-    async logout () {
+    async callLogout () {
       const res = await Confirm('确认要注销吗？', '注销提醒')
       if (res) {
         this.closeDialog()
-        writeLocalConfig('Config', 'autoLogin', false)
-        await writeSessionStorage('LoginFlag', false)
-        await writeSessionStorage('user', null)
-        routerJump(this.$router, './', true)
+        logout(this.$router)
       }
     },
     clickHandle () {},
