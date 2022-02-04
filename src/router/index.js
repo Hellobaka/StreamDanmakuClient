@@ -29,6 +29,11 @@ const routes = [
         path: 'register',
         name: '账号注册',
         component: () => import('../views/Register.vue')
+      },
+      {
+        path: 'txcloud-live/client',
+        name: 'live-客户端',
+        component: () => import('../views/Streamer/txcloud-live/Client.vue')
       }
     ]
   },
@@ -54,11 +59,6 @@ const routes = [
     name: 'txcloud-live-Streamer',
     component: () => import('../views/Streamer/Layout.vue'),
     children: [
-      {
-        path: 'client',
-        name: 'live-客户端',
-        component: () => import('../views/Streamer/txcloud-live/Client.vue')
-      },
       {
         path: 'server',
         name: 'live-推流端',
