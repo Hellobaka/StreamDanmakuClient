@@ -293,6 +293,20 @@ export default {
       danmukuColors: ['#ffffff', '#000000', '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#00ffff', '#ff00ff', '#66ccff', '#7fffd4', '#00bfff', '#98fb98']
     }
   },
+  watch: {
+    danmukuBlocker: {
+      handler (val) {
+        writeLocalConfig('Config', 'DanmukuBlocker', this.danmukuBlocker)
+      },
+      deep: true
+    },
+    danmukuConfig: {
+      handler (val) {
+        writeLocalConfig('Config', 'DanmukuConfig', this.danmukuConfig)
+      },
+      deep: true
+    }
+  },
   computed: {
     volIcon: function () {
       if (this.vols === 0) return 'mdi-volume-mute'
@@ -318,7 +332,6 @@ export default {
     }
   },
   mounted () {
-    console.log(this.$route)
     this.thisWindow = require('@electron/remote').getCurrentWindow()
     this.thisWindow.show()
     this.server.On('RoomEntered', this.handleRoomEnter)
@@ -327,6 +340,12 @@ export default {
     this.server.On('OnDanmuku', this.handleDanmuku)
     this.server.Emit('RoomEntered', { id: this.$route.query.id })
     this.videoContainer = document.querySelector('#video-container')
+
+    let config = loadLocalConfig('Config', 'DanmukuBlocker')
+    if (config) this.danmukuBlocker = config
+    config = loadLocalConfig('Config', 'DanmukuConfig')
+    if (config) this.danmukuConfig = config
+
     const timeout = 1500
     setInterval(() => {
       if (!this.toolbarActive || this.danmukuInputFlag) return
@@ -501,17 +520,17 @@ export default {
     },
     handleRoomVanish () {
       console.log('Receive room exit')
-      this.videoPlayer.unload()
       Info('与房主断开连接，点击确定返回房间列表', '连接中断').then(() => {
-        this.thisWindow.close()
+        this.$router.go(-1)
       })
+      this.videoPlayer.unload()
     },
     handleRoomClose () {
       console.log('Receive room exit')
-      this.videoPlayer.unload()
       Info('与房主中断了连接，点击确定返回房间列表', '连接中断').then(() => {
-        this.thisWindow.close()
+        this.$router.go(-1)
       })
+      this.videoPlayer.unload()
     },
     volChange () {
       this.videoPlayer.volume = this.vols / 100
