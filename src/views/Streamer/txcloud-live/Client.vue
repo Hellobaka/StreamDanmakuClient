@@ -338,8 +338,14 @@ export default {
     this.server.On('RoomVanish', this.handleRoomVanish)
     this.server.On('RoomClose', this.handleRoomClose)
     this.server.On('OnDanmuku', this.handleDanmuku)
+    this.server.On('StreamerOffline', this.handleStreamerOffline)
+    this.server.On('StreamerReConnect', this.handleStreamerReConnect)
     this.server.Emit('RoomEntered', { id: this.$route.query.id })
     this.videoContainer = document.querySelector('#video-container')
+    // 重连后恢复房间状态
+    this.server.OnOpen = () => {
+      this.server.Emit('RoomEntered', { id: this.$route.query.id })
+    }
 
     let config = loadLocalConfig('Config', 'DanmukuBlocker')
     if (config) this.danmukuBlocker = config
@@ -558,7 +564,7 @@ export default {
           player.destroy()
         }
         setTimeout(() => {
-          this.createVideo(url)
+          this.server.Emit('GetPullUrl', { type: 1 })
         }, 3000)
       })
       player.on(flvjs.Events.LOADING_COMPLETE, () => {
@@ -718,7 +724,7 @@ export default {
         setTimeout(() => {
           this.$refs.danmukuContainer.removeChild(element)
           this.danmukuItemList.splice(this.danmukuItemList.indexOf(element), 1)
-        }, 5000)
+        }, 4000)
         return
       }
       const width = element.clientWidth
@@ -826,6 +832,14 @@ export default {
         // this.thisWindow.hide()
         this.$router.go(-1)
       }
+    },
+    handleStreamerOffline () {
+      this.snackbar.Info('主播断线')
+      this.videoPlayer.unload()
+    },
+    handleStreamerReConnect () {
+      this.server.Emit('RoomEntered', { id: this.$route.query.id })
+      this.snackbar.Info('主播恢复连线，尝试重新连接...')
     }
   },
   beforeDestroy () {

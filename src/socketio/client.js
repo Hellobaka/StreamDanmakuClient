@@ -28,6 +28,7 @@ function init () {
   }
   server.connection.onclose = async (e) => {
     console.log('Disconnect from Server.')
+    if (this.OnClose) this.OnClose()
     reconnect()
   }
   server.connection.onerror = (e) => {
@@ -44,13 +45,8 @@ function init () {
     } else {
       Emit('GetInfo', { loginFlag: false })
     }
+    if (this.OnOpen) this.OnOpen()
     // await writeSessionStorage('user', null)
-  }
-}
-// eslint-disable-next-line no-unused-vars
-async function CallStreamGetInfo () {
-  if (streamFlag) {
-    Emit('GetInfo', { loginFlag: true, jwt: loadLocalConfig('JWT').token, streamFlag: true })
   }
 }
 function Emit (type, msg) {
@@ -64,7 +60,6 @@ function On (type, callback) {
 
 server.On = On
 server.Emit = Emit
-server.CallStreamGetInfo = CallStreamGetInfo
 server.user = {}
 server.delay = 0
 server.On('HeartBeat', (data) => {
@@ -81,6 +76,7 @@ server.On('GetInfoResult', async (data) => {
     routerJump(null, './', true)
   } else {
     if (data.data) {
+      server.user = data.data
       await writeSessionStorage('user', data.data)
       await writeSessionStorage('LoginFlag', true)
       writeLocalConfig('Session', 'UserID', data.data.Id, true)

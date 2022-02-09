@@ -105,7 +105,8 @@ import NewRoom from '../components/NewRoom.vue'
 import RoomPassword from '../components/RoomPassword.vue'
 import JoinRoom from '../components/JoinRoom.vue'
 import { loadLocalConfig, addListener, removeListener } from '../utils/tools'
-import { createChildWindow, LoadStreamerURL } from '../utils/windowsHelper'
+import { LoadStreamerURL } from '../utils/windowsHelper'
+import { Confirm } from '../utils/dialog'
 export default {
   components: {
     NewRoom,
@@ -186,23 +187,35 @@ export default {
         this.snackbar.Error('房间不存在')
       }
     },
-    enterRoom (id) {
+    async enterRoom (id) {
       const room = this.roomList.find(x => x.RoomID === id)
+      if (room.RoomID === this.server.user.Id) {
+        const res = await Confirm('提示', '点击确定恢复主播身份进入，点击取消则以观众身份进入')
+        if (res) {
+          this.server.On('ResumeRoom', data => {
+            if (data.isSuccess) {
+              LoadStreamerURL(this.$router, 'txcloud-live-streamer/server?resume=true', false)
+            } else {
+              this.snackbar.Error(data.msg)
+            }
+          })
+          this.server.Emit('ResumeRoom', '')
+          return
+        }
+      }
       this.formSend = true
       this.server.On('EnterRoom', (data) => {
         this.formSend = false
         if (data.code === 200) {
           switch (room.Mode) {
             case 0: // trtc
-              createChildWindow(`TRTC-streamer/client?id=${id}`, true)
+              // createChildWindow(`TRTC-streamer/client?id=${id}`, true)
               break
             case 1: // 普通快直播
-              // createChildWindow(`txcloud-live-streamer/client?id=${id}`, true)
-              // this.$router.push(`txcloud-live-streamer/client?id=${id}`)
               LoadStreamerURL(this.$router, `txcloud-live/client?id=${id}`, true)
               break
             case 2: // 自搭
-              createChildWindow(`streamer/client?id=${id}`, true)
+              // createChildWindow(`streamer/client?id=${id}`, true)
               break
             case 3: // 语音
               break
@@ -248,9 +261,6 @@ export default {
       })
       this.formSend = true
       this.server.Emit('RoomList', {})
-    },
-    createServerWin () {
-      createChildWindow('streamer/server', false)
     },
     filterChange (label) {
       switch (label) {

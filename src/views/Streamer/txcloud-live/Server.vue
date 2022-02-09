@@ -189,11 +189,16 @@ export default {
       this.tray = null
     }
     this.server.On('GetPushUrl', data => {
-      this.writeLog('初始化完成，请使用OBS进行推流')
       this.pushServer = data.data.server
       this.pushKey = data.data.key
-      this.writeLog(`推流地址：${this.pushServer}`)
-      this.writeLog(`推流密钥：${this.pushKey}`)
+
+      if (this.$route.query.resume) {
+        this.startTime = new Date().getTime()
+      } else {
+        this.writeLog('初始化完成，请进行推流之后点击下方的开始直播以公开房间')
+        this.writeLog(`推流地址：${this.pushServer}`)
+        this.writeLog(`推流密钥：${this.pushKey}`)
+      }
     })
     this.server.On('RoomInfo', data => {
       if (data.code !== 200) {
@@ -211,7 +216,17 @@ export default {
     })
     this.server.On('OnLeave', this.OnLeave)
     this.server.On('OnEnter', this.OnEnter)
-
+    // 重连后恢复房间状态
+    this.server.OnOpen = () => {
+      this.server.On('ResumeRoom', data => {
+        if (data.isSuccess) {
+          this.server.Emit('RoomInfo', '')
+        } else {
+          this.snackbar.Error(data.msg)
+        }
+      })
+      this.server.Emit('ResumeRoom', '')
+    }
     setInterval(() => {
       this.nowTime = new Date().getTime()
     }, 1000)
