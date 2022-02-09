@@ -232,7 +232,6 @@ export default {
       for (const item in this.Config) {
         writeLocalConfig('Config', item, this.Config[item])
       }
-      console.log(this.Config)
       console.log(this.$vuetify.theme.themes.light.primary)
       this.$vuetify.theme.themes.light.primary = this.Config.themeColor
       this.closeDialog()

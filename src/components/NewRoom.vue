@@ -40,7 +40,7 @@
 </template>
 
 <script>
-import { createChildWindow, LoadStreamerURL } from '../utils/windowsHelper'
+import { LoadStreamerURL } from '../utils/windowsHelper'
 export default {
   name: 'NewRoom',
   data () {
@@ -89,14 +89,14 @@ export default {
     createServerWin (mode) {
       switch (mode) {
         case 0: // trtc
-          createChildWindow('TRTC-streamer/server', false)
+          // createChildWindow('TRTC-streamer/server', false)
           break
         case 1: // 普通快直播
           // createChildWindow('txcloud-live-streamer/server', false)
           LoadStreamerURL(this.$router, 'txcloud-live-streamer/server', false)
           break
         case 2: // 自搭
-          createChildWindow('streamer/server', false)
+          // createChildWindow('streamer/server', false)
           break
         case 3: // 语音
           break

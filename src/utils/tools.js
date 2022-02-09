@@ -21,8 +21,8 @@ fs.ensureDir(userDataPath)
 function getUserConfigPath () {
   return path.resolve(userDataPath, loadLocalConfig('Session', true).UserID.toString(), 'Config.json')
 }
-export function md5Encrypt (msg) {
-  msg += SALT
+export function md5Encrypt (msg, salt = true) {
+  if (salt) msg += SALT
   return md5(msg)
 }
 export function writeLocalConfig (section, key, value, isLoginConfig = false) {
@@ -38,11 +38,7 @@ export function writeLocalConfig (section, key, value, isLoginConfig = false) {
     fs.writeJSONSync(configPath, {})
   }
 }
-let routerSave = null
 export function routerJump (router, path, replace = false) {
-  if (router) routerSave = router
-  else router = routerSave
-
   if (path === './') window.location.href = './index.html'
   else if (replace) router.replace({ path })
   else router.push(path)
