@@ -46,11 +46,11 @@
           </div>
         </v-hover>
         <v-spacer></v-spacer>
-        <div id="danmukuSender">
-          <input v-model="currentDanmuku" @keydown.enter="sendDanmuku" type="text" class="normalInput" @focus="inputOnFocus" @blur="inputOnBlur" ref="danmukuSender">
+        <div id="danmakuSender">
+          <input v-model="currentDanmaku" @keydown.enter="sendDanmaku" type="text" class="normalInput" @focus="inputOnFocus" @blur="inputOnBlur" ref="danmakuSender">
           <v-tooltip top>
             <template v-slot:activator="{ on, attrs }">
-              <v-btn @click="sendDanmuku" v-on="on" v-bind="attrs" :color="danmukuSenderColor" style="color: white;">{{danmukuSenderText}}</v-btn>
+              <v-btn @click="sendDanmaku" v-on="on" v-bind="attrs" :color="danmakuSenderColor" style="color: white;">{{danmakuSenderText}}</v-btn>
             </template>
             <span>发送弹幕</span>
           </v-tooltip>
@@ -58,9 +58,9 @@
         <v-spacer></v-spacer>
         <v-tooltip top>
           <template v-slot:activator="{ on, attrs }">
-            <v-btn @click="showDanmukuChange" v-on="on" v-bind="attrs" icon><v-icon>{{danmukuSwitchIcon}}</v-icon></v-btn>
+            <v-btn @click="showDanmakuChange" v-on="on" v-bind="attrs" icon><v-icon>{{danmakuSwitchIcon}}</v-icon></v-btn>
           </template>
-          <span>{{showDanmuku?'关闭':'打开'}}弹幕</span>
+          <span>{{showDanmaku?'关闭':'打开'}}弹幕</span>
         </v-tooltip>
         <v-tooltip top>
           <template v-slot:activator="{ on, attrs }">
@@ -101,12 +101,12 @@ export default {
       playStatus: true,
       loading: true,
       toolbarActive: false,
-      currentDanmuku: '',
-      showDanmuku: true,
-      danmukuInputFlag: false,
+      currentDanmaku: '',
+      showDanmaku: true,
+      danmakuInputFlag: false,
       activeChangeCounter: 0,
-      danmukuCD: 0,
-      danmukuCDTimer: 0,
+      danmakuCD: 0,
+      danmakuCDTimer: 0,
       menu: false,
       menuX: 0,
       menuY: 0,
@@ -135,16 +135,16 @@ export default {
       else if (this.vols < 50) return 'mdi-volume-medium'
       else return 'mdi-volume-high'
     },
-    danmukuSenderText: function () {
-      if (this.danmukuCD !== 0) return `${this.danmukuCD}秒`
+    danmakuSenderText: function () {
+      if (this.danmakuCD !== 0) return `${this.danmakuCD}秒`
       return '发送'
     },
-    danmukuSenderColor: function () {
-      if (this.danmukuCD !== 0) return '#a9a9a9'
+    danmakuSenderColor: function () {
+      if (this.danmakuCD !== 0) return '#a9a9a9'
       return this.$vuetify.theme.themes.light.primary
     },
-    danmukuSwitchIcon: function () {
-      return this.showDanmuku ? 'mdi-message-processing-outline' : 'mdi-message-off-outline'
+    danmakuSwitchIcon: function () {
+      return this.showDanmaku ? 'mdi-message-processing-outline' : 'mdi-message-off-outline'
     },
     playButtonIcon: function () {
       return this.playStatus ? 'mdi-origin' : 'mdi-steam'
@@ -162,7 +162,7 @@ export default {
     }
     const timeout = 1500
     setInterval(() => {
-      if (!this.toolbarActive || this.danmukuInputFlag) return
+      if (!this.toolbarActive || this.danmakuInputFlag) return
       this.activeChangeCounter++
       if (this.activeChangeCounter === timeout) {
         this.toolbarActive = false
@@ -186,7 +186,7 @@ export default {
         this.RTCConfigure.iceServers[serverLength].urls = result[2]
       }
     }
-    this.showDanmuku = !!this.config.danmukuDefault
+    this.showDanmaku = !!this.config.danmakuDefault
     this.RTCConnection = new RTCPeerConnection(this.RTCConfigure)
     this.writeLog('已新建RTC连接, 等待服务器响应')
   },
@@ -209,12 +209,12 @@ export default {
       this.volChange()
     },
     inputOnFocus () {
-      this.danmukuInputFlag = true
-      this.$refs.danmukuSender.style.boxShadow = `0px 0px 20px 0px ${this.$vuetify.theme.themes.light.primary}`
+      this.danmakuInputFlag = true
+      this.$refs.danmakuSender.style.boxShadow = `0px 0px 20px 0px ${this.$vuetify.theme.themes.light.primary}`
     },
     inputOnBlur () {
-      this.danmukuInputFlag = false
-      this.$refs.danmukuSender.style.boxShadow = `0px 0px 0px 0px ${this.$vuetify.theme.themes.light.primary}`
+      this.danmakuInputFlag = false
+      this.$refs.danmakuSender.style.boxShadow = `0px 0px 0px 0px ${this.$vuetify.theme.themes.light.primary}`
     },
     toolbarActiveChange () {
       this.toolbarActive = true
@@ -254,23 +254,23 @@ export default {
       if (!log) return
       this.logs.push({ content: `[${moment().format('yyyy-MM-DD HH:mm:ss')}] ${log}`, time: new Date().getTime() })
     },
-    sendDanmuku () {
-      if (this.danmukuCD) return
-      if (this.danmukuCDTimer) {
-        clearInterval(this.danmukuCDTimer)
+    sendDanmaku () {
+      if (this.danmakuCD) return
+      if (this.danmakuCDTimer) {
+        clearInterval(this.danmakuCDTimer)
       }
-      this.danmukuCD = 1
-      this.danmukuCDTimer = setInterval(() => {
-        if (this.danmukuCD === 0) return
-        this.danmukuCD--
+      this.danmakuCD = 1
+      this.danmakuCDTimer = setInterval(() => {
+        if (this.danmakuCD === 0) return
+        this.danmakuCD--
       }, 1000)
-      this.writeLog(this.currentDanmuku)
-      this.currentDanmuku = ''
+      this.writeLog(this.currentDanmaku)
+      this.currentDanmaku = ''
     },
-    showDanmukuChange () {
-      this.showDanmuku = !this.showDanmuku
-      if (this.config.danmukuRemember) {
-        writeLocalConfig('Config', 'danmukuDefault', this.showDanmuku)
+    showDanmakuChange () {
+      this.showDanmaku = !this.showDanmaku
+      if (this.config.danmakuRemember) {
+        writeLocalConfig('Config', 'danmakuDefault', this.showDanmaku)
       }
     },
     async handleRoomEnter (data) {
@@ -330,7 +330,7 @@ export default {
 </script>
 
 <style scoped>
-#danmukuSender {
+#danmakuSender {
   display: flex;
   width: 50%;
 }
