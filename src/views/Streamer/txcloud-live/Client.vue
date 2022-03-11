@@ -229,7 +229,7 @@
 </template>
 
 <script>
-import { loadLocalConfig, writeLocalConfig, copyText, addListener, removeListener } from '@/utils/tools'
+import { loadLocalConfig, writeLocalConfig, readSessionStorage, copyText, addListener, removeListener } from '@/utils/tools'
 import moment from 'moment'
 import { Info, Confirm } from '@/utils/dialog'
 import flvjs from 'flv.js'
@@ -240,6 +240,7 @@ import { DanmakuManager } from '@/danmakuManager/index'
 export default {
   data () {
     return {
+      user: null,
       server: Window.$WebSocket,
       screenFullFlag: false,
       thisWindow: null,
@@ -333,9 +334,10 @@ export default {
       return loadLocalConfig('Config')
     }
   },
-  mounted () {
+  async mounted () {
     this.thisWindow = require('@electron/remote').getCurrentWindow()
     this.thisWindow.show()
+    this.user = await readSessionStorage('user')
     this.server.On('RoomEntered', this.handleRoomEnter)
     this.server.On('RoomVanish', this.handleRoomVanish)
     this.server.On('RoomClose', this.handleRoomClose)
@@ -708,8 +710,10 @@ export default {
         }
       }
       data.log = false
-      // this.danmakuList.push(data)
-      // this.AddDanmaku(data.Content, data.Color, data.Position)
+      this.danmakuList.push(data)
+      if (data.SenderUserID !== this.user.Id) {
+        this.AddDanmaku(data.Content, data.Color, data.Position)
+      }
     },
     async closeClient () {
       const res = await Confirm('不看了吗？', '确认')
