@@ -399,6 +399,7 @@ export default {
     resizeHandle () {
       const ele = document.querySelector('#clientFrame')
       ele.style.height = `${this.thisWindow.getSize()[1] - 48 - 48}px`
+      this.danmakuManager.reCalcMaxMove()
     },
     callScreenFull () {
       if (!this.screenFullFlag) {
@@ -632,7 +633,7 @@ export default {
       this.danmakuID++
       this.$nextTick(() => {
         document.querySelector('#danmakuBottom').scrollIntoView()
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < 1; i++) {
           this.danmakuManager.createElement(content, color, position)
         }
       })

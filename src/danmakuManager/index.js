@@ -29,31 +29,29 @@ class DanmakuManager {
 
   destroy () {
     clearInterval(this.moveTimerId)
-    this.danmakuList.forEach(danmaku => {
+    this.danmakuList.forEach((danmaku) => {
       this.danmakuContainer.removeChild(danmaku)
     })
     this.danmakuList = []
   }
 
   moveDanmaku () {
-    this.danmakuList.forEach(danmaku => {
-      setTimeout(() => {
-        if (!danmaku.position === 0) {
-          if (danmaku.timeout >= this.stillDanmakuTimeout) {
-            this.animeEnd(danmaku)
-          } else {
-            danmaku.timeout += this.calcSpeed()
-          }
-          return
-        }
-        if (danmaku.move > danmaku.maxMove) {
+    this.danmakuList.forEach((danmaku) => {
+      if (!danmaku.position === 0) {
+        if (danmaku.timeout >= this.stillDanmakuTimeout) {
           this.animeEnd(danmaku)
-          return
+        } else {
+          danmaku.timeout += this.calcSpeed()
         }
-        danmaku.move++
-        danmaku.style.right = danmaku.begin + 'px'
-        danmaku.begin++
-      }, 1)
+        return
+      }
+      if (danmaku.move > danmaku.maxMove) {
+        this.animeEnd(danmaku)
+        return
+      }
+      danmaku.move++
+      danmaku.style.right = danmaku.begin + 'px'
+      danmaku.begin++
     })
   }
 
@@ -62,19 +60,19 @@ class DanmakuManager {
   }
 
   changeOpacity (opacity) {
-    this.danmakuList.forEach(danmaku => {
+    this.danmakuList.forEach((danmaku) => {
       danmaku.style.opacity = opacity / 10
     })
   }
 
   changeFontSize (fontSize) {
-    this.danmakuList.forEach(danmaku => {
+    this.danmakuList.forEach((danmaku) => {
       danmaku.style.fontSize = fontSize + 'px'
     })
   }
 
   changeFontFamily (fontFamily) {
-    this.danmakuList.forEach(danmaku => {
+    this.danmakuList.forEach((danmaku) => {
       danmaku.style.fontFamily = fontFamily
     })
   }
@@ -90,14 +88,24 @@ class DanmakuManager {
     console.log('animeEnd')
   }
 
+  reCalcMaxMove () {
+    this.danmakuList.forEach((danmaku) => {
+      danmaku.maxMove = this.danmakuContainer.clientWidth + danmaku.width * 2
+    })
+  }
+
   createElement (text, color, position) {
     const element = document.createElement('span')
     this.danmakuContainer.appendChild(element)
     element.position = position
     element.innerText = text
-    element.style = `font-size: ${this.danmakuConfig.FontSize}px; opacity: ${this.danmakuConfig.Opacity / 10}; color: ${color}; font-family: ${this.danmakuConfig.FontFamily}; font-weight: ${this.danmakuConfig.Bold ? 'bold' : 'normal'}`
-    element.style.width = element.offsetWidth + 'px'
-    element.width = element.offsetWidth
+    element.style = `font-size: ${this.danmakuConfig.FontSize}px; opacity: ${
+      this.danmakuConfig.Opacity / 10
+    }; color: ${color}; font-family: ${
+      this.danmakuConfig.FontFamily
+    }; font-weight: ${this.danmakuConfig.Bold ? 'bold' : 'normal'}`
+    element.style.width = element.offsetWidth + 2 + 'px'
+    element.width = element.offsetWidth + 2
     element.maxMove = this.danmakuContainer.clientWidth + element.width * 2
     element.move = 0
     element.classList.add('danmakuBase')
@@ -109,7 +117,10 @@ class DanmakuManager {
       element.classList.add('danmakuStillItem')
       this.stillPositionFind(element)
     }
-    element.begin = this.danmakuContainer.clientWidth - element.offsetLeft - element.clientWidth
+    element.begin =
+      this.danmakuContainer.clientWidth -
+      element.offsetLeft -
+      element.clientWidth
     this.danmakuList.push(element)
   }
 
@@ -118,9 +129,18 @@ class DanmakuManager {
     let step = 0
     let findFlag = false
     const containerWidth = this.danmakuContainer.clientWidth
-    this.danmakuMaxStep = parseInt((this.danmakuContainer.offsetHeight * this.danmakuConfig.Height / 100) / height)
+    this.danmakuMaxStep = parseInt(
+      (this.danmakuContainer.offsetHeight * this.danmakuConfig.Height) /
+        100 /
+        height
+    )
     for (let i = 0; i <= this.danmakuMaxStep; i++) {
-      const len = this.danmakuList.filter(x => x.step === step && x.position === 0 && containerWidth - x.offsetLeft - x.clientWidth < x.clientWidth)
+      const len = this.danmakuList.filter(
+        (x) =>
+          x.step === step &&
+          x.position === 0 &&
+          containerWidth - x.offsetLeft - x.clientWidth < x.clientWidth
+      )
       if (len.length === 0) {
         findFlag = true
         break
@@ -137,9 +157,12 @@ class DanmakuManager {
 
       element.step = this.danmakuLastStep
       step = element.step
-      const arr = this.danmakuList.filter(x => x.step === this.danmakuLastStep)
+      const arr = this.danmakuList.filter(
+        (x) => x.step === this.danmakuLastStep
+      )
       const lastElement = arr[arr.length - 1]
-      const rightOffset = containerWidth - lastElement.offsetLeft - lastElement.clientWidth
+      const rightOffset =
+        containerWidth - lastElement.offsetLeft - lastElement.clientWidth
       element.style.right = `${rightOffset - lastElement.clientWidth - 5}px`
     } else {
       this.danmakuLastStep = step
@@ -152,9 +175,13 @@ class DanmakuManager {
     const height = element.offsetHeight
     let step = 0
     let findFlag = false
-    const danmakuMaxStepVertical = parseInt((this.danmakuContainer.offsetHeight) / height)
+    const danmakuMaxStepVertical = parseInt(
+      this.danmakuContainer.offsetHeight / height
+    )
     for (let i = 0; i <= danmakuMaxStepVertical; i++) {
-      const len = this.danmakuList.filter(x => x.step === step && x.position === element.position)
+      const len = this.danmakuList.filter(
+        (x) => x.step === step && x.position === element.position
+      )
       if (len.length === 0) {
         findFlag = true
         break
