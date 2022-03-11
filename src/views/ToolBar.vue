@@ -53,7 +53,7 @@
           <v-list>
             <v-list-item @click="callListener('player-play')"><v-list-item-title>播放/停止</v-list-item-title></v-list-item>
             <v-list-item @click="callListener('player-reload')"><v-list-item-title>重新载入</v-list-item-title></v-list-item>
-            <v-list-item @click="callListener('player-danmuku')"><v-list-item-title>打开/关闭弹幕</v-list-item-title></v-list-item>
+            <v-list-item @click="callListener('player-danmaku')"><v-list-item-title>打开/关闭弹幕</v-list-item-title></v-list-item>
             <v-list-item @click="callListener('player-exit')"><v-list-item-title>退出直播间</v-list-item-title></v-list-item>
           </v-list>
         </v-menu>

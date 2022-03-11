@@ -103,8 +103,8 @@ export function getTemplateConfig () {
       input: '',
       inputDeviceID: '',
       outputDeviceID: '',
-      danmukuDefault: true,
-      danmukuRemember: true,
+      danmakuDefault: true,
+      danmakuRemember: true,
       p2pAssist: true,
       stunServer: '',
       turnServer: ''

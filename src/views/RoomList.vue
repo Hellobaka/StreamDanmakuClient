@@ -190,7 +190,7 @@ export default {
     async enterRoom (id) {
       const room = this.roomList.find(x => x.RoomID === id)
       if (room.RoomID === this.server.user.Id) {
-        const res = await Confirm('提示', '点击确定恢复主播身份进入，点击取消则以观众身份进入')
+        const res = await Confirm('点击确定恢复主播身份进入，点击取消则以观众身份进入', '提示')
         if (res) {
           this.server.On('ResumeRoom', data => {
             if (data.isSuccess) {

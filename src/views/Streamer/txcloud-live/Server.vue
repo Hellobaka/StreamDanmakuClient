@@ -36,18 +36,18 @@
         <span>关闭</span>
       </v-tooltip>
     </v-app-bar>
-    <v-main class="Transplant07" ref="danmukuList">
+    <v-main class="Transplant07" ref="danmakuList">
       <v-menu v-model="menu" :position-x="menuX" :position-y="menuY" absolute offset-y>
         <v-list dark style="background-color: rgba(100,100,100,.8);">
           <v-list-item @click="callCopy(roomInstance.InviteCode)">复制邀请码</v-list-item>
           <v-list-item @click="callCopy(pushServer)">复制推流服务器 URL</v-list-item>
           <v-list-item @click="callCopy(pushKey)">复制推流密钥</v-list-item>
-          <v-list-item @click="clearDanmuku">清空弹幕池</v-list-item>
+          <v-list-item @click="clearDanmaku">清空弹幕池</v-list-item>
         </v-list>
       </v-menu>
       <div @mousedown.right.stop="showMenu">
-        <v-list :style="`background: transparent;overflow-y: scroll;height:${listHeight}px;`" id="danmukuList">
-          <v-list-item v-for="item in danmukuList" :key="item.id" dense @mousedown.right.stop="showMenu($event, true, item)">
+        <v-list :style="`background: transparent;overflow-y: scroll;height:${listHeight}px;`" id="danmakuList">
+          <v-list-item v-for="item in danmakuList" :key="item.id" dense @mousedown.right.stop="showMenu($event, true, item)">
             <span v-if="item.log" style="color:skyblue">
               <v-icon small color="#66ccff">mdi-wrench</v-icon>
             </span>
@@ -57,22 +57,22 @@
             <span style="word-break: break-all;word-wrap: break-word;overflow: auto;">{{item.Content}}</span>
           </v-list-item>
         </v-list>
-        <v-menu v-model="menuDanmuku" :position-x="menuX" :position-y="menuY" absolute offset-y>
+        <v-menu v-model="menuDanmaku" :position-x="menuX" :position-y="menuY" absolute offset-y>
           <v-list min-width="150px" dark style="background-color: rgba(100,100,100,.8);">
             <v-list-item @click="callCopy(item.content)">复制</v-list-item>
             <v-list-item @click="clickable">添加好友</v-list-item>
-            <v-list-item @click="sendDanmuku(item.content)">复读</v-list-item>
+            <v-list-item @click="sendDanmaku(item.content)">复读</v-list-item>
             <v-list-item dense><v-divider></v-divider></v-list-item>
             <v-list-item @click="clickable">禁言用户</v-list-item>
             <v-list-item @click="clickable">踢出</v-list-item>
           </v-list>
         </v-menu>
       </div>
-      <div id="danmukuSender" style="display: flex;padding: 0 17px;">
-        <input v-model="danmukuInput" @keydown.enter="sendDanmuku" type="text" class="normalInput" @focus="inputOnFocus" @blur="inputOnBlur" ref="danmukuSender">
+      <div id="danmakuSender" style="display: flex;padding: 0 17px;">
+        <input v-model="danmakuInput" @keydown.enter="sendDanmaku" type="text" class="normalInput" @focus="inputOnFocus" @blur="inputOnBlur" ref="danmakuSender">
         <v-tooltip top>
           <template v-slot:activator="{ on, attrs }">
-            <v-btn @click="sendDanmuku" v-on="on" v-bind="attrs" :color="danmukuSenderColor" style="color: white;">发送弹幕</v-btn>
+            <v-btn @click="sendDanmaku" v-on="on" v-bind="attrs" :color="danmakuSenderColor" style="color: white;">发送弹幕</v-btn>
           </template>
           <span>发送弹幕</span>
         </v-tooltip>
@@ -82,7 +82,7 @@
       <div @mousedown.right.stop="showMenu" style="display:flex; align-items: center; width: 100%;">
         <span style="margin-right: 10px;">{{streamTime}}</span>
         <span style="margin-right: 10px;">房间内 {{onlineCount}} 人</span>
-        <span style="margin-right: 10px;">弹幕: {{danmukuCount}} 条</span>
+        <span style="margin-right: 10px;">弹幕: {{danmakuCount}} 条</span>
         <v-spacer></v-spacer>
         <v-btn @click="switchRoomPublic">{{roomPublicFlag?'终止':'开始'}}直播</v-btn>
       </div>
@@ -108,16 +108,16 @@ export default {
       ignoreMouse: false,
       serverDelay: 0,
       serverConnected: false,
-      danmukuList: [],
+      danmakuList: [],
       server: Window.$WebSocket,
       tray: null,
       listHeight: 459,
       headerHeight: 0,
       footerHeight: 0,
-      danmukuHeight: 0,
+      danmakuHeight: 0,
       stateHandler: 0,
       menu: false,
-      menuDanmuku: false,
+      menuDanmaku: false,
       menuX: 0,
       menuY: 0,
       roomPublicFlag: false,
@@ -125,19 +125,19 @@ export default {
       pushKey: '',
       startTime: 0,
       nowTime: 0,
-      currentDanmuku: {},
-      danmukuInput: '',
-      danmukuColor: '#FFFFFF',
-      danmukuPosition: '0',
-      danmukuInputFlag: false
+      currentDanmaku: {},
+      danmakuInput: '',
+      danmakuColor: '#FFFFFF',
+      danmakuPosition: '0',
+      danmakuInputFlag: false
     }
   },
   computed: {
     config: function () {
       return loadLocalConfig('Config')
     },
-    danmukuCount: function () {
-      return this.danmukuList.filter(x => !x.log).length
+    danmakuCount: function () {
+      return this.danmakuList.filter(x => !x.log).length
     },
     streamTime: function () {
       if (this.startTime === 0) {
@@ -152,7 +152,7 @@ export default {
         return moment.duration(diff).format('HH:mm:ss')
       }
     },
-    danmukuSenderColor: function () {
+    danmakuSenderColor: function () {
       return this.$vuetify.theme.themes.light.primary
     }
   },
@@ -209,10 +209,10 @@ export default {
       }
     })
     this.server.Emit('RoomInfo', '')
-    this.server.On('OnDanmuku', data => {
-      data.id = this.danmukuList.length
+    this.server.On('OnDanmaku', data => {
+      data.id = this.danmakuList.length
       data.log = false
-      this.danmukuList.push(data)
+      this.danmakuList.push(data)
     })
     this.server.On('OnLeave', this.OnLeave)
     this.server.On('OnEnter', this.OnEnter)
@@ -237,7 +237,7 @@ export default {
       return moment(time).format('HH:mm:ss')
     },
     writeLog (content) {
-      this.danmukuList.push({ id: this.danmukuList.length, Content: `${content}`, Time: new Date().getTime(), log: true })
+      this.danmakuList.push({ id: this.danmakuList.length, Content: `${content}`, Time: new Date().getTime(), log: true })
     },
     updateMenu () {
       // this.tray.setToolTip('vue-cli-electron')
@@ -296,19 +296,19 @@ export default {
       if (this.headerHeight === 0) {
         this.headerHeight = this.$refs.header.$el.offsetHeight
         this.footerHeight = this.$refs.footer.$el.offsetHeight
-        this.danmukuHeight = document.querySelector('#danmukuSender').offsetHeight
+        this.danmakuHeight = document.querySelector('#danmakuSender').offsetHeight
       }
-      this.listHeight = totalHeight - this.headerHeight - this.footerHeight - this.danmukuHeight
+      this.listHeight = totalHeight - this.headerHeight - this.footerHeight - this.danmakuHeight
     },
     blurHandler () {
-      this.$refs.danmukuList.$el.classList.remove('Transplant07')
-      this.$refs.danmukuList.$el.classList.add('halfTransplant')
+      this.$refs.danmakuList.$el.classList.remove('Transplant07')
+      this.$refs.danmakuList.$el.classList.add('halfTransplant')
       this.$refs.footer.$el.classList.remove('Transplant08')
       this.$refs.footer.$el.classList.add('halfTransplant')
     },
     focusHandler () {
-      this.$refs.danmukuList.$el.classList.remove('halfTransplant')
-      this.$refs.danmukuList.$el.classList.add('Transplant07')
+      this.$refs.danmakuList.$el.classList.remove('halfTransplant')
+      this.$refs.danmakuList.$el.classList.add('Transplant07')
       this.$refs.footer.$el.classList.remove('halfTransplant')
       this.$refs.footer.$el.classList.add('Transplant08')
     },
@@ -350,7 +350,7 @@ export default {
         const res = await Confirm('点击确定将开始直播', '提示')
         console.log(res)
         if (res) {
-          this.danmukuList = []
+          this.danmakuList = []
           this.server.On('SwitchStream', data => {
             // start
             this.startTime = new Date().getTime()
@@ -360,7 +360,7 @@ export default {
       } else {
         const res = await Confirm('点击确定将关闭房间', '提示')
         if (res) {
-          this.danmukuList = []
+          this.danmakuList = []
           this.server.On('SwitchStream', data => {
             // start
           })
@@ -368,50 +368,50 @@ export default {
         }
       }
     },
-    showMenu (e, isDanmuku = false, danmuku = {}) {
+    showMenu (e, isDanmaku = false, danmaku = {}) {
       e.preventDefault()
-      this.currentDanmuku = danmuku
+      this.currentDanmaku = danmaku
       this.menu = false
-      this.menuDanmuku = false
+      this.menuDanmaku = false
       this.menuX = e.clientX
       this.menuY = e.clientY
       this.$nextTick(() => {
-        if (isDanmuku) { this.menuDanmuku = true } else { this.menu = true }
+        if (isDanmaku) { this.menuDanmaku = true } else { this.menu = true }
       })
     },
     clickable () {},
-    clearDanmuku () {
-      this.danmukuList = []
+    clearDanmaku () {
+      this.danmakuList = []
     },
     callCopy (text) {
       copyText(text)
     },
-    sendDanmuku ($event, content) {
-      if (this.danmukuInput === '' || this.danmukuInput.trim() === '') {
+    sendDanmaku ($event, content) {
+      if (this.danmakuInput === '' || this.danmakuInput.trim() === '') {
         // this.snackbar.Error('请输入弹幕内容')
         return
       }
-      const danmuku = content || this.danmukuInput
-      this.server.On('SendDanmuku', data => {
+      const danmaku = content || this.danmakuInput
+      this.server.On('SendDanmaku', data => {
         if (data.code === 200) {
-          if (!content) this.danmukuInput = ''
+          if (!content) this.danmakuInput = ''
         } else {
           this.snackbar.Error(data.msg)
         }
       })
-      this.server.Emit('SendDanmuku', {
-        content: danmuku,
-        color: this.danmukuColor,
-        position: this.danmukuPosition
+      this.server.Emit('SendDanmaku', {
+        content: danmaku,
+        color: this.danmakuColor,
+        position: this.danmakuPosition
       })
     },
     inputOnFocus () {
-      this.danmukuInputFlag = true
-      this.$refs.danmukuSender.style.boxShadow = `0px 0px 20px 0px ${this.$vuetify.theme.themes.light.primary}`
+      this.danmakuInputFlag = true
+      this.$refs.danmakuSender.style.boxShadow = `0px 0px 20px 0px ${this.$vuetify.theme.themes.light.primary}`
     },
     inputOnBlur () {
-      this.danmukuInputFlag = false
-      this.$refs.danmukuSender.style.boxShadow = `0px 0px 0px 0px ${this.$vuetify.theme.themes.light.primary}`
+      this.danmakuInputFlag = false
+      this.$refs.danmakuSender.style.boxShadow = `0px 0px 0px 0px ${this.$vuetify.theme.themes.light.primary}`
     }
   }
 }
@@ -444,15 +444,15 @@ export default {
 button{
   -webkit-app-region: no-drag;
 }
-#danmukuList::-webkit-scrollbar {
+#danmakuList::-webkit-scrollbar {
   width : 10px;
   height: 1px;
 }
-#danmukuList::-webkit-scrollbar-thumb {
+#danmakuList::-webkit-scrollbar-thumb {
   border-radius: 10px;
   background   : skyblue;
 }
-#danmukuList::-webkit-scrollbar-track {
+#danmakuList::-webkit-scrollbar-track {
   border-radius: 10px;
   background   : #ededed;
 }

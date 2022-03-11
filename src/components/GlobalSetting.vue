@@ -85,7 +85,7 @@
           <v-subheader>弹幕设置</v-subheader>
           <v-list-item @click="clickHandle">
             <v-list-item-action>
-              <v-switch v-model="Config.danmukuDefault"></v-switch>
+              <v-switch v-model="Config.danmakuDefault"></v-switch>
             </v-list-item-action>
             <v-list-item-content>
               <v-list-item-title>弹幕默认状态</v-list-item-title>
@@ -94,7 +94,7 @@
           </v-list-item>
           <v-list-item @click="clickHandle">
             <v-list-item-action>
-              <v-switch v-model="Config.danmukuRemember"></v-switch>
+              <v-switch v-model="Config.danmakuRemember"></v-switch>
             </v-list-item-action>
             <v-list-item-content>
               <v-list-item-title>记忆弹幕状态</v-list-item-title>
@@ -182,8 +182,8 @@ export default {
         input: '',
         inputDeviceID: '',
         outputDeviceID: '',
-        danmukuDefault: true,
-        danmukuRemember: true,
+        danmakuDefault: true,
+        danmakuRemember: true,
         p2pAssist: true,
         stunServer: '',
         turnServer: ''

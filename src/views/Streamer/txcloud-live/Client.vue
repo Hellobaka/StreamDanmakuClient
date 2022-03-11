@@ -5,10 +5,10 @@
         <p v-for="log in logs" :key="log.id">{{log.Content}}</p>
         <p id="logBottom"></p>
       </div>
-      <div id="danmukuContainer" ref="danmukuContainer" v-show="showDanmuku" style="position: absolute; width: 100%; z-index: 9; height:95%">
+      <div id="danmakuContainer" ref="danmakuContainer" v-show="showDanmaku" style="position: absolute; width: 100%; z-index: 9; height:95%">
       </div>
-      <div id="danmukuListToggle" @click="danmukuListToggle">
-        <div id="danmukuListToggleArrow" v-bind:class="{'danmukuListToggleArrowReverse': danmukuListShow}"></div>
+      <div id="danmakuListToggle" @click="danmakuListToggle">
+        <div id="danmakuListToggleArrow" v-bind:class="{'danmakuListToggleArrowReverse': danmakuListShow}"></div>
       </div>
       <video id="video-container" style="width:100%; height:100%;"></video>
       <v-menu v-model="menu" :position-x="menuX" :position-y="menuY" absolute offset-y>
@@ -54,17 +54,17 @@
         <v-spacer></v-spacer>
         <v-tooltip top>
           <template v-slot:activator="{ on, attrs }">
-            <v-btn dark v-on="on" v-bind="attrs" icon @click="danmukuSenderControlBoxShow=!danmukuSenderControlBoxShow"><v-icon>mdi-alpha-a-box-outline</v-icon></v-btn>
+            <v-btn dark v-on="on" v-bind="attrs" icon @click="danmakuSenderControlBoxShow=!danmakuSenderControlBoxShow"><v-icon>mdi-alpha-a-box-outline</v-icon></v-btn>
           </template>
           <span>弹幕设置</span>
         </v-tooltip>
-        <div id="danmukuSender" style="position: relative;">
+        <div id="danmakuSender" style="position: relative;">
           <v-fade-transition>
-            <div v-if="danmukuSenderControlBoxShow" id="danmukuSenderControlBox" class="popBox" @mouseleave="danmukuSenderControlBoxShow=false" style="padding-bottom: 0">
+            <div v-if="danmakuSenderControlBoxShow" id="danmakuSenderControlBox" class="popBox" @mouseleave="danmakuSenderControlBoxShow=false" style="padding-bottom: 0">
               <div style="display: flex; align-items: center;">
                 <span>弹幕位置</span>
                 <div style="margin-left: 5px;border-radius: 5px; overflow: hidden;">
-                  <v-btn-toggle mandatory dark v-model="danmukuConfig.Position" :color="$vuetify.theme.themes.light.primary">
+                  <v-btn-toggle mandatory dark v-model="danmakuConfig.Position" :color="$vuetify.theme.themes.light.primary">
                     <v-btn small text value="0">滚动</v-btn>
                     <v-btn small text value="1">顶部</v-btn>
                     <v-btn small text value="2">底部</v-btn>
@@ -73,23 +73,23 @@
               </div>
               <div style="display: flex; align-items: center;margin-top: 10px;">
                 <span>弹幕颜色</span>
-                <div class="colorBlock" :style="`background-color:${danmukuConfig.Color};`">
+                <div class="colorBlock" :style="`background-color:${danmakuConfig.Color};`">
                 </div>
               </div>
-              <div id="danmukuColorBlocks" style="display: flex; align-items: center; margin-top: 10px;">
-                <div class="colorBlock" v-for="color in danmukuColors" :key="color.color" :style="`background-color:${color};`" @click="danmukuConfig.Color=color"></div>
+              <div id="danmakuColorBlocks" style="display: flex; align-items: center; margin-top: 10px;">
+                <div class="colorBlock" v-for="color in danmakuColors" :key="color.color" :style="`background-color:${color};`" @click="danmakuConfig.Color=color"></div>
               </div>
               <div style="display: flex; margin-top: 15px;">
-                <v-text-field dense dark solo v-model="danmukuConfig.Color"></v-text-field>
-                <v-btn dark style="margin-left: 5px;" @click="danmukuConfig.Color='#ffffff'">重置</v-btn>
+                <v-text-field dense dark solo v-model="danmakuConfig.Color"></v-text-field>
+                <v-btn dark style="margin-left: 5px;" @click="danmakuConfig.Color='#ffffff'">重置</v-btn>
               </div>
             </div>
           </v-fade-transition>
 
-          <input :disabled="!showDanmuku" v-model="danmukuInput" @keydown.enter="sendDanmuku" type="text" class="normalInput" @focus="inputOnFocus" @blur="inputOnBlur" ref="danmukuSender">
+          <input :disabled="!showDanmaku" v-model="danmakuInput" @keydown.enter="sendDanmaku" type="text" class="normalInput" @focus="inputOnFocus" @blur="inputOnBlur" ref="danmakuSender">
           <v-tooltip top>
             <template v-slot:activator="{ on, attrs }">
-              <v-btn dark @click="sendDanmuku" v-on="on" v-bind="attrs" :color="danmukuSenderColor" style="color: white;">{{danmukuSenderText}}</v-btn>
+              <v-btn dark @click="sendDanmaku" v-on="on" v-bind="attrs" :color="danmakuSenderColor" style="color: white;">{{danmakuSenderText}}</v-btn>
             </template>
             <span>发送弹幕</span>
           </v-tooltip>
@@ -97,42 +97,42 @@
         <v-spacer></v-spacer>
         <v-tooltip top>
           <template v-slot:activator="{ on, attrs }">
-            <v-btn dark @click="showDanmukuChange" v-on="on" v-bind="attrs" icon><v-icon>{{danmukuSwitchIcon}}</v-icon></v-btn>
+            <v-btn dark @click="showDanmakuChange" v-on="on" v-bind="attrs" icon><v-icon>{{danmakuSwitchIcon}}</v-icon></v-btn>
           </template>
-          <span>{{showDanmuku?'关闭':'打开'}}弹幕</span>
+          <span>{{showDanmaku?'关闭':'打开'}}弹幕</span>
         </v-tooltip>
         <v-hover v-slot="{ hover }">
           <div>
             <v-btn dark icon><v-icon>mdi-message-question-outline</v-icon></v-btn>
             <v-fade-transition>
-              <div v-if="hover" id="danmukuControlBox" class="popBox">
-                <v-checkbox :color="$vuetify.theme.themes.light.primary" dark dense height="15" label="弹幕屏蔽生效开关" v-model="danmukuBlocker.switch"></v-checkbox>
+              <div v-if="hover" id="danmakuControlBox" class="popBox">
+                <v-checkbox :color="$vuetify.theme.themes.light.primary" dark dense height="15" label="弹幕屏蔽生效开关" v-model="danmakuBlocker.switch"></v-checkbox>
                 <span style="color: rgba(255, 255, 255, 0.7);">屏蔽设置</span>
-                <v-tabs style="margin-bottom: 5px;" dark fixed-tabs :color="$vuetify.theme.themes.light.primary" v-model="danmukuBlockerItem">
+                <v-tabs style="margin-bottom: 5px;" dark fixed-tabs :color="$vuetify.theme.themes.light.primary" v-model="danmakuBlockerItem">
                   <v-tab href="#tab-1">
                     关键字
                   </v-tab>
                   <v-tab href="#tab-2">用户</v-tab>
                 </v-tabs>
-                <v-tabs-items v-model="danmukuBlockerItem">
+                <v-tabs-items v-model="danmakuBlockerItem">
                   <v-tab-item
                     value="tab-1"
                   >
                     <v-list id="blockerList" class="slimScrollbar" subheader>
                       <v-subheader>
-                        <span>共有屏蔽词 {{danmukuBlocker.keywords.length}} 个</span>
-                        <v-btn icon small @click="clearDanmukuBlocker('keywords')"><v-icon>mdi-delete</v-icon></v-btn>
+                        <span>共有屏蔽词 {{danmakuBlocker.keywords.length}} 个</span>
+                        <v-btn icon small @click="clearDanmakuBlocker('keywords')"><v-icon>mdi-delete</v-icon></v-btn>
                       </v-subheader>
-                      <v-list-item dense v-for="item in danmukuBlocker.keywords" :key="item">
+                      <v-list-item dense v-for="item in danmakuBlocker.keywords" :key="item">
                         <span style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">{{item}}</span>
-                        <v-btn icon @click="removeDanmukuBlocker('keywords',item)"><v-icon>mdi-close</v-icon></v-btn>
+                        <v-btn icon @click="removeDanmakuBlocker('keywords',item)"><v-icon>mdi-close</v-icon></v-btn>
                       </v-list-item>
-                      <v-list-item dense v-if="danmukuBlocker.keywords.length===0">
+                      <v-list-item dense v-if="danmakuBlocker.keywords.length===0">
                         <span style="width: 100%; text-align: center;">(・ω・) 列表为空</span>
                       </v-list-item>
                     </v-list>
                     <div style="display: flex; align-items: baseline; margin-bottom: 5px; margin-right: 5px;">
-                      <v-text-field hide-details="auto" label="关键词或正则表达式" clearable dense style="margin: 0 10px;" v-model="danmukuBlockerTmpWord"></v-text-field>
+                      <v-text-field hide-details="auto" label="关键词或正则表达式" clearable dense style="margin: 0 10px;" v-model="danmakuBlockerTmpWord"></v-text-field>
                       <v-btn dark @click="addBlockKeyword">添加</v-btn>
                     </div>
                   </v-tab-item>
@@ -141,15 +141,15 @@
                   >
                     <v-list id="blockerList" class="slimScrollbar">
                       <v-subheader>
-                        <span>共屏蔽用户 {{danmukuBlocker.users.length}} 个</span>
-                        <v-btn icon small @click="clearDanmukuBlocker('users')"><v-icon>mdi-delete</v-icon></v-btn>
+                        <span>共屏蔽用户 {{danmakuBlocker.users.length}} 个</span>
+                        <v-btn icon small @click="clearDanmakuBlocker('users')"><v-icon>mdi-delete</v-icon></v-btn>
                       </v-subheader>
 
-                      <v-list-item dense v-for="item in danmukuBlocker.users" :key="item.id">
+                      <v-list-item dense v-for="item in danmakuBlocker.users" :key="item.id">
                         <span style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">{{item.name}} - UID:{{item.id}}</span>
-                        <v-btn icon @click="removeDanmukuBlocker('users',item)"><v-icon>mdi-close</v-icon></v-btn>
+                        <v-btn icon @click="removeDanmakuBlocker('users',item)"><v-icon>mdi-close</v-icon></v-btn>
                       </v-list-item>
-                      <v-list-item dense v-if="danmukuBlocker.users.length===0">
+                      <v-list-item dense v-if="danmakuBlocker.users.length===0">
                         <span style="width: 100%; text-align: center;">(・ω・) 列表为空</span>
                       </v-list-item>
                     </v-list>
@@ -163,19 +163,19 @@
           <div>
             <v-btn dark icon><v-icon>mdi-message-cog-outline</v-icon></v-btn>
             <v-fade-transition>
-              <div v-if="holdHover||hover" id="danmukuControlBox" class="popBox">
+              <div v-if="holdHover||hover" id="danmakuControlBox" class="popBox">
                 <v-container style="display: flex;align-items: baseline;">
-                  <v-autocomplete hide-details height="15" @focus="holdHover=true" @blur="holdHover=false" v-model="danmukuConfig.FontFamily" :items="fontList" outlined dense solo dark label="弹幕字体" style="width: 70%;"></v-autocomplete>
-                  <v-checkbox :color="$vuetify.theme.themes.light.primary" hide-details height="15" v-model="danmukuConfig.Bold" label="粗体" dense dark></v-checkbox>
+                  <v-autocomplete hide-details height="15" @focus="holdHover=true" @blur="holdHover=false" v-model="danmakuConfig.FontFamily" :items="fontList" outlined dense solo dark label="弹幕字体" style="width: 70%;"></v-autocomplete>
+                  <v-checkbox :color="$vuetify.theme.themes.light.primary" hide-details height="15" v-model="danmakuConfig.Bold" label="粗体" dense dark></v-checkbox>
                 </v-container>
-                <v-slider height="15" label="弹幕大小" min="12" max="30" v-model="danmukuConfig.FontSize" thumb-label :thumb-size="30" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary"></v-slider>
-                <v-slider height="15" label="弹幕透明" min="3" max="10" v-model="danmukuConfig.Opacity" thumb-label :thumb-size="30" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary">
+                <v-slider height="15" label="弹幕大小" min="12" max="30" v-model="danmakuConfig.FontSize" thumb-label :thumb-size="30" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary"></v-slider>
+                <v-slider height="15" label="弹幕透明" min="3" max="10" v-model="danmakuConfig.Opacity" thumb-label :thumb-size="30" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary">
                   <template v-slot:thumb-label="{ value }">
                     {{ value*10 }}%
                   </template>
                 </v-slider>
-                <v-slider height="15" label="弹幕速度" min="5" max="200" v-model="danmukuConfig.Speed" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary"></v-slider>
-                <v-slider height="15" label="显示区域" v-model="danmukuConfig.Height" :thumb-size="30" step="25" min="25" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary">
+                <v-slider height="15" label="弹幕速度" min="5" max="200" v-model="danmakuConfig.Speed" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary"></v-slider>
+                <v-slider height="15" label="显示区域" v-model="danmakuConfig.Height" :thumb-size="30" step="25" min="25" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary">
                   <template v-slot:thumb-label="{ value }">
                     {{ showAreaText(value) }}
                   </template>
@@ -198,13 +198,13 @@
         </v-tooltip>
       </div>
     </div>
-    <div id="danmukuListContainer" v-bind:class="{'danmukuListHidden': !danmukuListShow}"  @mousedown.right.stop="showMenu($event, true, -1)">
-      <v-list subheader id="danmukuList" class="slimScrollbar">
+    <div id="danmakuListContainer" v-bind:class="{'danmakuListHidden': !danmakuListShow}"  @mousedown.right.stop="showMenu($event, true, -1)">
+      <v-list subheader id="danmakuList" class="slimScrollbar">
         <v-subheader>
           弹幕列表
-          <v-btn icon @click="clearDanmuku"><v-icon>mdi-delete</v-icon></v-btn>
+          <v-btn icon @click="clearDanmaku"><v-icon>mdi-delete</v-icon></v-btn>
         </v-subheader>
-        <v-list-item v-for="item in danmukuList" :key="item.id" dense style="flex-wrap: wrap;" @mousedown.right.stop="showMenu($event, true, item)">
+        <v-list-item v-for="item in danmakuList" :key="item.id" dense style="flex-wrap: wrap;" @mousedown.right.stop="showMenu($event, true, item)">
           <span v-if="item.log" style="color:skyblue">
             <v-icon small color="#66ccff">mdi-wrench</v-icon>
           </span>
@@ -213,16 +213,16 @@
           </span>
           <span style="word-break: break-all;word-wrap: break-word;overflow: auto;">{{item.Content}}</span>
         </v-list-item>
-        <v-menu v-model="menuDanmuku" :position-x="menuX" :position-y="menuY" absolute offset-y>
+        <v-menu v-model="menuDanmaku" :position-x="menuX" :position-y="menuY" absolute offset-y>
           <v-list min-width="150px" dark style="background-color: rgba(100,100,100,.8);">
-            <v-list-item :disabled="currentDanmuku==null" @click="callCopy(currentDanmuku.Content)">复制{{currentDanmuku==null?'':currentDanmuku.Content}}</v-list-item>
-            <v-list-item :disabled="currentDanmuku==null" @click="clickable">添加好友</v-list-item>
-            <v-list-item :disabled="currentDanmuku==null" @click="sendDanmuku(currentDanmuku.Content)">复读</v-list-item>
+            <v-list-item :disabled="currentDanmaku==null" @click="callCopy(currentDanmaku.Content)">复制{{currentDanmaku==null?'':currentDanmaku.Content}}</v-list-item>
+            <v-list-item :disabled="currentDanmaku==null" @click="clickable">添加好友</v-list-item>
+            <v-list-item :disabled="currentDanmaku==null" @click="sendDanmaku(currentDanmaku.Content)">复读</v-list-item>
             <v-list-item dense><v-divider></v-divider></v-list-item>
-            <v-list-item @click="clearDanmuku">清空弹幕</v-list-item>
+            <v-list-item @click="clearDanmaku">清空弹幕</v-list-item>
           </v-list>
         </v-menu>
-        <div id="danmukuBottom"></div>
+        <div id="danmakuBottom"></div>
       </v-list>
     </div>
   </div>
@@ -235,6 +235,7 @@ import { Info, Confirm } from '@/utils/dialog'
 import flvjs from 'flv.js'
 import { getFonts } from 'font-list'
 import { RestoreWindow } from '@/utils/windowsHelper'
+import { DanmakuManager } from '@/danmakuManager/index'
 
 export default {
   data () {
@@ -247,12 +248,12 @@ export default {
       playStatus: true,
       loading: true,
       toolbarActive: false,
-      danmukuInput: '',
-      showDanmuku: true,
-      danmukuInputFlag: false,
+      danmakuInput: '',
+      showDanmaku: true,
+      danmakuInputFlag: false,
       activeChangeCounter: 0,
-      danmukuCD: 0,
-      danmukuCDTimer: 0,
+      danmakuCD: 0,
+      danmakuCDTimer: 0,
       menu: false,
       menuX: 0,
       menuY: 0,
@@ -261,14 +262,14 @@ export default {
       roomInstance: {},
       videoPlayer: null,
       catchFrameTimer: 0,
-      danmukuListShow: false,
-      danmukuList: [],
-      menuDanmuku: false,
-      maxDanmukuCount: 20,
-      danmukuID: 0,
-      currentDanmuku: {},
-      danmukuSenderControlBoxShow: false,
-      danmukuConfig: {
+      danmakuListShow: false,
+      danmakuList: [],
+      menuDanmaku: false,
+      maxDanmakuCount: 20,
+      danmakuID: 0,
+      currentDanmaku: {},
+      danmakuSenderControlBoxShow: false,
+      danmakuConfig: {
         FontFamily: '微软雅黑',
         Bold: true,
         FontSize: 20,
@@ -278,31 +279,32 @@ export default {
         Color: '#ffffff',
         Opacity: 10
       },
-      danmukuBlockerItem: null,
-      danmukuBlockerTmpWord: '',
-      danmukuBlocker: {
+      danmakuManager: null,
+      danmakuBlockerItem: null,
+      danmakuBlockerTmpWord: '',
+      danmakuBlocker: {
         switch: true,
         keywords: [],
         users: []
       },
       fontList: [],
       holdHover: false,
-      danmukuItemList: [],
-      danmukuLastStep: 0,
-      danmukuMaxStep: 26,
-      danmukuColors: ['#ffffff', '#000000', '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#00ffff', '#ff00ff', '#66ccff', '#7fffd4', '#00bfff', '#98fb98']
+      danmakuItemList: [],
+      danmakuLastStep: 0,
+      danmakuMaxStep: 26,
+      danmakuColors: ['#ffffff', '#000000', '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#00ffff', '#ff00ff', '#66ccff', '#7fffd4', '#00bfff', '#98fb98']
     }
   },
   watch: {
-    danmukuBlocker: {
+    danmakuBlocker: {
       handler (val) {
-        writeLocalConfig('Config', 'DanmukuBlocker', this.danmukuBlocker)
+        writeLocalConfig('Config', 'DanmakuBlocker', this.danmakuBlocker)
       },
       deep: true
     },
-    danmukuConfig: {
+    danmakuConfig: {
       handler (val) {
-        writeLocalConfig('Config', 'DanmukuConfig', this.danmukuConfig)
+        writeLocalConfig('Config', 'DanmakuConfig', this.danmakuConfig)
       },
       deep: true
     }
@@ -313,16 +315,16 @@ export default {
       else if (this.vols < 50) return 'mdi-volume-medium'
       else return 'mdi-volume-high'
     },
-    danmukuSenderText: function () {
-      if (this.danmukuCD !== 0) return `${this.danmukuCD}秒`
+    danmakuSenderText: function () {
+      if (this.danmakuCD !== 0) return `${this.danmakuCD}秒`
       return '发送'
     },
-    danmukuSenderColor: function () {
-      if (this.danmukuCD !== 0 || !this.showDanmuku) return '#a9a9a9'
+    danmakuSenderColor: function () {
+      if (this.danmakuCD !== 0 || !this.showDanmaku) return '#a9a9a9'
       return this.$vuetify.theme.themes.light.primary
     },
-    danmukuSwitchIcon: function () {
-      return this.showDanmuku ? 'mdi-message-processing-outline' : 'mdi-message-off-outline'
+    danmakuSwitchIcon: function () {
+      return this.showDanmaku ? 'mdi-message-processing-outline' : 'mdi-message-off-outline'
     },
     playButtonIcon: function () {
       return this.playStatus ? 'mdi-origin' : 'mdi-steam'
@@ -337,7 +339,7 @@ export default {
     this.server.On('RoomEntered', this.handleRoomEnter)
     this.server.On('RoomVanish', this.handleRoomVanish)
     this.server.On('RoomClose', this.handleRoomClose)
-    this.server.On('OnDanmuku', this.handleDanmuku)
+    this.server.On('OnDanmaku', this.handleDanmaku)
     this.server.On('StreamerOffline', this.handleStreamerOffline)
     this.server.On('StreamerReConnect', this.handleStreamerReConnect)
     this.server.Emit('RoomEntered', { id: this.$route.query.id })
@@ -347,20 +349,22 @@ export default {
       this.server.Emit('RoomEntered', { id: this.$route.query.id })
     }
 
-    let config = loadLocalConfig('Config', 'DanmukuBlocker')
-    if (config) this.danmukuBlocker = config
-    config = loadLocalConfig('Config', 'DanmukuConfig')
-    if (config) this.danmukuConfig = config
+    let config = loadLocalConfig('Config', 'DanmakuBlocker')
+    if (config) this.danmakuBlocker = config
+    config = loadLocalConfig('Config', 'DanmakuConfig')
+    if (config) this.danmakuConfig = config
 
+    this.danmakuManager = new DanmakuManager(this.danmakuConfig)
+    this.danmakuManager.bindContainer(this.$refs.danmakuContainer)
     const timeout = 1500
     setInterval(() => {
-      if (!this.toolbarActive || this.danmukuInputFlag) return
+      if (!this.toolbarActive || this.danmakuInputFlag) return
       this.activeChangeCounter++
       if (this.activeChangeCounter === timeout) {
         this.toolbarActive = false
       }
     }, 100)
-    this.showDanmuku = !!this.config.danmukuDefault
+    this.showDanmaku = !!this.config.danmakuDefault
     getFonts({ disableQuoting: true }).then(fonts => {
       this.fontList = fonts.sort((a, b) => -1)
     }).catch(err => {
@@ -378,8 +382,8 @@ export default {
       addListener('player-reload', () => {
         this.reconnect()
       })
-      addListener('player-danmuku', () => {
-        this.showDanmukuChange()
+      addListener('player-danmaku', () => {
+        this.showDanmakuChange()
       })
       addListener('player-exit', () => {
         this.closeClient()
@@ -389,7 +393,7 @@ export default {
       this.thisWindow.off('resize', this.resizeHandle)
       removeListener('player-play')
       removeListener('player-reload')
-      removeListener('player-danmuku')
+      removeListener('player-danmaku')
       removeListener('player-exit')
     },
     resizeHandle () {
@@ -414,12 +418,12 @@ export default {
       this.volChange()
     },
     inputOnFocus () {
-      this.danmukuInputFlag = true
-      this.$refs.danmukuSender.style.boxShadow = `0px 0px 20px 0px ${this.$vuetify.theme.themes.light.primary}`
+      this.danmakuInputFlag = true
+      this.$refs.danmakuSender.style.boxShadow = `0px 0px 20px 0px ${this.$vuetify.theme.themes.light.primary}`
     },
     inputOnBlur () {
-      this.danmukuInputFlag = false
-      this.$refs.danmukuSender.style.boxShadow = `0px 0px 0px 0px ${this.$vuetify.theme.themes.light.primary}`
+      this.danmakuInputFlag = false
+      this.$refs.danmakuSender.style.boxShadow = `0px 0px 0px 0px ${this.$vuetify.theme.themes.light.primary}`
     },
     toolbarActiveChange () {
       this.toolbarActive = true
@@ -432,16 +436,16 @@ export default {
 
       this.server.Emit('RoomEntered', { id: this.$route.query.id })
     },
-    showMenu (e, isDanmukuMenu = false, danmuku = {}) {
+    showMenu (e, isDanmakuMenu = false, danmaku = {}) {
       e.preventDefault()
       this.menu = false
-      this.menuDanmuku = false
+      this.menuDanmaku = false
       this.menuX = e.clientX
       this.menuY = e.clientY
-      this.currentDanmuku = danmuku
+      this.currentDanmaku = danmaku
       this.$nextTick(() => {
-        if (isDanmukuMenu) {
-          this.menuDanmuku = true
+        if (isDanmakuMenu) {
+          this.menuDanmaku = true
         } else { this.menu = true }
       })
     },
@@ -468,35 +472,35 @@ export default {
         document.querySelector('#logBottom').scrollIntoView()
       })
     },
-    sendDanmuku ($event, content) {
-      if (this.danmukuCD || !this.showDanmuku) return
-      if (this.danmukuCDTimer) {
-        clearInterval(this.danmukuCDTimer)
+    sendDanmaku ($event, content) {
+      if (this.danmakuCD || !this.showDanmaku) return
+      if (this.danmakuCDTimer) {
+        clearInterval(this.danmakuCDTimer)
       }
-      this.danmukuCD = 1
-      this.danmukuCDTimer = setInterval(() => {
-        if (this.danmukuCD === 0) return
-        this.danmukuCD--
+      this.danmakuCD = 1
+      this.danmakuCDTimer = setInterval(() => {
+        if (this.danmakuCD === 0) return
+        this.danmakuCD--
       }, 1000)
-      const danmuku = content || this.danmukuInput
-      this.server.On('SendDanmuku', data => {
+      const danmaku = content || this.danmakuInput
+      this.server.On('SendDanmaku', data => {
         if (data.code === 200) {
-          this.AddDanmuku(danmuku, this.danmukuConfig.Color, this.danmukuConfig.Position)
-          if (!content) this.danmukuInput = ''
+          this.AddDanmaku(danmaku, this.danmakuConfig.Color, this.danmakuConfig.Position)
+          if (!content) this.danmakuInput = ''
         } else {
           this.snackbar.Error(data.msg)
         }
       })
-      this.server.Emit('SendDanmuku', {
-        content: danmuku,
-        color: this.danmukuConfig.Color,
-        position: this.danmukuConfig.Position
+      this.server.Emit('SendDanmaku', {
+        content: danmaku,
+        color: this.danmakuConfig.Color,
+        position: this.danmakuConfig.Position
       })
     },
-    showDanmukuChange () {
-      this.showDanmuku = !this.showDanmuku
-      if (this.config.danmukuRemember) {
-        writeLocalConfig('Config', 'danmukuDefault', this.showDanmuku)
+    showDanmakuChange () {
+      this.showDanmaku = !this.showDanmaku
+      if (this.config.danmakuRemember) {
+        writeLocalConfig('Config', 'danmakuDefault', this.showDanmaku)
       }
     },
     async handleRoomEnter (data) {
@@ -512,16 +516,16 @@ export default {
             }
           }
         })
-        this.server.On('GetRoomDanmuku', data => {
+        this.server.On('GetRoomDanmaku', data => {
           if (data.code === 200) {
-            this.danmukuList = data.data
+            this.danmakuList = data.data
           }
         })
 
         this.writeLog('房间加入成功')
         this.roomInstance = data.data.roomInfo
         this.server.Emit('GetPullUrl', { type: 1 })
-        this.server.Emit('GetRoomDanmuku', '')
+        this.server.Emit('GetRoomDanmaku', '')
       }
     },
     handleRoomVanish () {
@@ -616,141 +620,21 @@ export default {
       return moment(time).format('HH:mm:ss')
     },
     clickable () {},
-    danmukuListToggle () {
-      this.danmukuListShow = !this.danmukuListShow
+    danmakuListToggle () {
+      this.danmakuListShow = !this.danmakuListShow
     },
-    createDanmukuElement (text, color, position = 0, fontSize = 20, bold = true, fontFamily = 'Microsoft YaHei') {
-      let element = document.createElement('span')
-      this.$refs.danmukuContainer.appendChild(element)
-      element.position = position
-      element.innerText = text
-      element.style = `font-size: ${fontSize}px; opacity: ${this.danmukuConfig.Opacity / 10}; color: ${color}; font-family: ${fontFamily}; font-weight: ${bold ? 'bold' : 'normal'}`
-      element.click = this.clickable
-      element.style.width = element.offsetWidth + 'px'
-      element.classList.add('danmukuBase')
-
-      // baseSpeed 定义为多长时间移动 1px, 一般宽度为1580px, 假定15s跑完, 则此值为 15000/1580 = 9.5
-      // 此值不会因为窗口变化而变化, 所以是经验向数值
-      const baseSpeed = 9.5
-      const speed = baseSpeed * (1 / (this.danmukuConfig.Speed / 50))
-
-      if (position === 0) {
-        element = this.createMoveDanmuku(element)
-      } else {
-        element = this.createStillDanmuku(element, position)
-      }
-
-      this.danmukuMoveAnime(element, position === 0, speed)
-      this.danmukuItemList.push(element)
-      // element.addEventListener('webkitAnimationEnd', () => {
-      //   this.$refs.danmukuContainer.removeChild(element)
-      // })
-    },
-    createMoveDanmuku (element) {
-      element.classList.add('danmukuMoveItem')
-
-      const height = element.offsetHeight
-      let step = 0
-      let findFlag = false
-      const containerWidth = this.$refs.danmukuContainer.clientWidth
-      this.danmukuMaxStep = parseInt((this.$refs.danmukuContainer.offsetHeight * this.danmukuConfig.Height / 100) / height)
-      for (let i = 0; i <= this.danmukuMaxStep; i++) {
-        const len = this.danmukuItemList.filter(x => x.step === step && x.position === '0' && containerWidth - x.offsetLeft - x.clientWidth < x.clientWidth)
-        if (len.length === 0) {
-          findFlag = true
-          break
-        } else {
-          step++
-        }
-      }
-      if (!findFlag) {
-        if (this.danmukuLastStep === this.danmukuMaxStep) {
-          this.danmukuLastStep = 0
-        } else {
-          this.danmukuLastStep++
-        }
-
-        element.step = this.danmukuLastStep
-        step = element.step
-        const arr = this.danmukuItemList.filter(x => x.step === this.danmukuLastStep)
-        const lastElement = arr[arr.length - 1]
-        const rightOffset = containerWidth - lastElement.offsetLeft - lastElement.clientWidth
-        element.style.right = `${rightOffset - lastElement.clientWidth - 5}px`
-      } else {
-        this.danmukuLastStep = step
-      }
-      element.step = step
-      element.style.top = `${step * height}px`
-      return element
-    },
-    createStillDanmuku (element, position) {
-      element.classList.add('danmukuStillItem')
-
-      const height = element.offsetHeight
-      let step = 0
-      let findFlag = false
-      const danmukuMaxStepVertical = parseInt((this.$refs.danmukuContainer.offsetHeight) / height)
-      for (let i = 0; i <= danmukuMaxStepVertical; i++) {
-        const len = this.danmukuItemList.filter(x => x.step === step && x.position === position)
-        if (len.length === 0) {
-          findFlag = true
-          break
-        } else {
-          step++
-        }
-      }
-      if (!findFlag) {
-        if (this.danmukuLastStep === danmukuMaxStepVertical) {
-          this.danmukuLastStep = 0
-        } else {
-          this.danmukuLastStep++
-        }
-
-        element.step = this.danmukuLastStep
-        step = element.step
-      } else {
-        this.danmukuLastStep = step
-      }
-      element.step = step
-      if (position === 1) {
-        element.style.top = `${step * height}px`
-      } else {
-        element.style.bottom = `${step * height}px`
-      }
-      return element
-    },
-    danmukuMoveAnime (element, isRoll, speed) {
-      if (!isRoll) {
-        setTimeout(() => {
-          this.$refs.danmukuContainer.removeChild(element)
-          this.danmukuItemList.splice(this.danmukuItemList.indexOf(element), 1)
-        }, 4000)
-        return
-      }
-      const width = element.clientWidth
-      let begin = this.$refs.danmukuContainer.clientWidth - element.offsetLeft - element.clientWidth
-      const id = setInterval(() => {
-        if (element.offsetLeft <= -width * 2) {
-          // console.log('end')
-          this.$refs.danmukuContainer.removeChild(element)
-          this.danmukuItemList.splice(this.danmukuItemList.indexOf(element), 1)
-          clearInterval(id)
-          return
-        }
-        element.style.right = begin + 'px'
-        begin++
-      }, speed)
-    },
-    AddDanmuku (content, color, position) {
+    AddDanmaku (content, color, position) {
       position = parseInt(position)
-      if (!this.showDanmuku) return
-      if (this.danmukuList.length > this.maxDanmukuCount) {
-        this.danmukuList.splice(0, 1)
+      if (!this.showDanmaku) return
+      if (this.danmakuList.length > this.maxDanmakuCount) {
+        this.danmakuList.splice(0, 1)
       }
-      this.danmukuID++
+      this.danmakuID++
       this.$nextTick(() => {
-        document.querySelector('#danmukuBottom').scrollIntoView()
-        this.createDanmukuElement(content, color, position, this.danmukuConfig.FontSize, this.danmukuConfig.Bold, this.danmukuConfig.FontFamily)
+        document.querySelector('#danmakuBottom').scrollIntoView()
+        for (let i = 0; i < 100; i++) {
+          this.danmakuManager.createElement(content, color, position)
+        }
       })
     },
     showAreaText (value) {
@@ -762,39 +646,39 @@ export default {
       }
     },
     addBlockKeyword () {
-      const keyword = this.danmukuBlockerTmpWord
+      const keyword = this.danmakuBlockerTmpWord
       if (keyword.length === 0 || keyword.trim().length === 0) {
         this.snackbar.Error('关键词不能为空')
         return
       }
-      if (this.danmukuBlocker.keywords.indexOf(keyword) !== -1) {
+      if (this.danmakuBlocker.keywords.indexOf(keyword) !== -1) {
         this.snackbar.Error('关键词已存在')
         return
       }
-      this.danmukuBlocker.keywords.push(keyword)
-      this.danmukuBlockerTmpWord = ''
+      this.danmakuBlocker.keywords.push(keyword)
+      this.danmakuBlockerTmpWord = ''
     },
-    removeDanmukuBlocker (type, content) {
+    removeDanmakuBlocker (type, content) {
       switch (type) {
         case 'keywords':
-          this.danmukuBlocker.keywords.splice(this.danmukuBlocker.keywords.indexOf(content), 1)
+          this.danmakuBlocker.keywords.splice(this.danmakuBlocker.keywords.indexOf(content), 1)
           break
         case 'users':
-          this.danmukuBlocker.users.splice(this.danmukuBlocker.users.indexOf(content), 1)
+          this.danmakuBlocker.users.splice(this.danmakuBlocker.users.indexOf(content), 1)
           break
         default:
           break
       }
     },
-    async clearDanmukuBlocker (type) {
+    async clearDanmakuBlocker (type) {
       const res = await Confirm('是否清空此屏蔽项目', '确认')
       if (res) {
         switch (type) {
           case 'keywords':
-            this.danmukuBlocker.keywords = []
+            this.danmakuBlocker.keywords = []
             break
           case 'users':
-            this.danmukuBlocker.users = []
+            this.danmakuBlocker.users = []
             break
           default:
             break
@@ -804,27 +688,27 @@ export default {
     callCopy (text) {
       copyText(text)
     },
-    clearDanmuku () {
-      this.danmukuList = []
+    clearDanmaku () {
+      this.danmakuList = []
     },
-    handleDanmuku (data) {
-      if (this.danmukuBlocker.keywords.length > 0) {
-        for (let i = 0; i < this.danmukuBlocker.keywords.length; i++) {
-          if (data.Content.indexOf(this.danmukuBlocker.keywords[i]) !== -1) {
+    handleDanmaku (data) {
+      if (this.danmakuBlocker.keywords.length > 0) {
+        for (let i = 0; i < this.danmakuBlocker.keywords.length; i++) {
+          if (data.Content.indexOf(this.danmakuBlocker.keywords[i]) !== -1) {
             return
           }
         }
       }
-      if (this.danmukuBlocker.users.length > 0) {
-        for (let i = 0; i < this.danmukuBlocker.users.length; i++) {
-          if (data.SenderUserID.indexOf(this.danmukuBlocker.users[i]) !== -1) {
+      if (this.danmakuBlocker.users.length > 0) {
+        for (let i = 0; i < this.danmakuBlocker.users.length; i++) {
+          if (data.SenderUserID.indexOf(this.danmakuBlocker.users[i]) !== -1) {
             return
           }
         }
       }
       data.log = false
-      this.danmukuList.push(data)
-      this.AddDanmuku(data.Content, data.Color, data.Position)
+      // this.danmakuList.push(data)
+      // this.AddDanmaku(data.Content, data.Color, data.Position)
     },
     async closeClient () {
       const res = await Confirm('不看了吗？', '确认')
@@ -846,16 +730,17 @@ export default {
     this.ipcOff()
     this.$vuetify.theme.dark = false
     this.server.Emit('Leave', {})
+    this.danmakuManager.destroy()
     RestoreWindow()
   }
 }
 </script>
 <style>
-@keyframes danmukuAnime {
+@keyframes danmakuAnime {
   from {right: 0;}
   to {right: 140%;}
 }
-.danmukuBase {
+.danmakuBase {
   position: absolute;
   user-select: none;
   pointer-events: none;
@@ -863,11 +748,11 @@ export default {
   /* -webkit-text-stroke: 1px white; */
   /* text-shadow: 1px 1px #fff; */
 }
-.danmukuMoveItem {
+.danmakuMoveItem {
   right: 0px;
   transform: translate(100%);
 }
-.danmukuStillItem {
+.danmakuStillItem {
   left: 50%;
   transform: translate(-50%);
 }
@@ -884,21 +769,21 @@ export default {
   text-overflow: ellipsis;
 }
 
-#danmukuList {
+#danmakuList {
   overflow-y: scroll;
   height: 100%;
   width: 100%;
 }
-#danmukuListContainer {
+#danmakuListContainer {
   width: 25%;
   background: whitesmoke;
   transition: all .2s;
   z-index: 10;
 }
-.danmukuListHidden {
+.danmakuListHidden {
   width: 0 !important;
 }
-#danmukuListToggle {
+#danmakuListToggle {
   opacity: 0;
   transition: all 0.5s;
   position: absolute;
@@ -915,10 +800,10 @@ export default {
   z-index: 10;
   cursor: pointer;
 }
-#danmukuListToggle:hover {
+#danmakuListToggle:hover {
   opacity: 1;
 }
-#danmukuListToggleArrow {
+#danmakuListToggleArrow {
   width: 7px;
   height: 7px;
   border-left: 2px solid black;
@@ -926,10 +811,10 @@ export default {
   transform: rotate(45deg);
   transition: all .2s;
 }
-.danmukuListToggleArrowReverse {
+.danmakuListToggleArrowReverse {
   transform: rotate(225deg) !important;
 }
-#danmukuSender {
+#danmakuSender {
   display: flex;
   width: 50%;
 }
@@ -1032,12 +917,12 @@ export default {
   border-radius: 5px;
   z-index: 15;
 }
-#danmukuControlBox{
+#danmakuControlBox{
   width: 250px;
   bottom: 100%;
   transform: translate(-55%);
 }
-#danmukuSenderControlBox {
+#danmakuSenderControlBox {
   width: 250px;
   bottom: 100%;
   transform: translate(-55%);

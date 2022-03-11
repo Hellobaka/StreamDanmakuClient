@@ -31,8 +31,8 @@
       </v-tooltip>
     </v-app-bar>
     <v-main class="halfTransplant">
-      <v-list :style="`background: transparent;overflow-y: scroll;height:${listHeight}px;`" id="danmukuList">
-        <v-list-item v-for="item in danmukuList" :key="item.time" dense>
+      <v-list :style="`background: transparent;overflow-y: scroll;height:${listHeight}px;`" id="danmakuList">
+        <v-list-item v-for="item in danmakuList" :key="item.time" dense>
           <span v-if="item.log" style="color:skyblue">
             [{{timeFormat(item.time)}}]
           </span>
@@ -42,7 +42,7 @@
     </v-main>
     <v-footer ref="footer" style="display:flex; padding:10px;" class="halfTransplant" elevation="10">
       <span style="margin-right: 10px;">{{onlineCount}}人</span>
-      <span style="margin-right: 10px;">弹幕: {{danmukuCount}}条</span>
+      <span style="margin-right: 10px;">弹幕: {{danmakuCount}}条</span>
       <span style="margin-right: 10px;">网络上行: {{networkUpload}}</span>
       <span>码率: {{bitRate}}</span>
       <v-spacer></v-spacer>
@@ -69,7 +69,7 @@ export default {
       ignoreMouse: false,
       serverDelay: 0,
       serverConnected: false,
-      danmukuList: [],
+      danmakuList: [],
       totalUpload: 0,
       bitRate: 0,
       server: Window.$WebSocket,
@@ -101,8 +101,8 @@ export default {
     config: function () {
       return loadLocalConfig('Config')
     },
-    danmukuCount: function () {
-      return this.danmukuList.filter(x => !x.log).length
+    danmakuCount: function () {
+      return this.danmakuList.filter(x => !x.log).length
     },
     networkUpload: function () {
       return this.totalUpload === 0 ? this.speedParse(this.bitRate) : this.speedParse(this.totalUpload)
@@ -153,7 +153,7 @@ export default {
       return moment(time).format('yyyy-MM-DD HH:mm:ss')
     },
     writeLog (content) {
-      this.danmukuList.push({ content: `${content}`, time: new Date().getTime(), log: true })
+      this.danmakuList.push({ content: `${content}`, time: new Date().getTime(), log: true })
     },
     updateMenu () {
       this.tray.setToolTip('vue-cli-electron')
@@ -424,15 +424,15 @@ export default {
 button{
   -webkit-app-region: no-drag;
 }
-#danmukuList::-webkit-scrollbar {
+#danmakuList::-webkit-scrollbar {
   width : 10px;
   height: 1px;
 }
-#danmukuList::-webkit-scrollbar-thumb {
+#danmakuList::-webkit-scrollbar-thumb {
   border-radius: 10px;
   background   : skyblue;
 }
-#danmukuList::-webkit-scrollbar-track {
+#danmakuList::-webkit-scrollbar-track {
   border-radius: 10px;
   background   : #ededed;
 }
