@@ -514,7 +514,7 @@ export default {
           if (data.code === 200) {
             this.writeLog('拉流地址获取成功')
             if (flvjs.isSupported()) {
-              // this.createVideo(data.data.server + data.data.key)
+              this.createVideo(data.data.server + data.data.key)
               this.writeLog('播放器初始化成功，尝试播放...')
             }
           }
