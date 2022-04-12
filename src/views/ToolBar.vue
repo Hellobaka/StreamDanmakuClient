@@ -72,14 +72,10 @@
 
       <router-view />
     </v-main>
-    <v-overlay :value="!ServerConnected">
-      <v-progress-circular
-        indeterminate
-        size="64"
-        color="primary"
-      ></v-progress-circular>
-      <span style="margin-left: 1vw">与服务器建立连接中...</span>
-    </v-overlay>
+    <v-footer style="border-radius: 0 0 10px 10px;">
+      <div style="width:15px; height:15px; border-radius:50%; border: 1px solid gray; margin-right: 5px;" v-bind:class="{connected: ServerConnected, disconnected: !ServerConnected}"></div>
+      <div style="user-select: none;">{{ServerConnected?'已连接':'正在连接...'}}</div>
+    </v-footer>
     <v-dialog v-model="userCenterOn" @click:outside="userCenterOn=false" persistent>
       <UserCenter @onDialogClose="userCenterOn=false" v-if="userCenterOn"></UserCenter>
     </v-dialog>
@@ -162,5 +158,13 @@ export default {
 <style lang="scss">
 .clickable:hover{
   cursor: pointer;
+}
+</style>
+<style scoped>
+.connected {
+  background: green;
+}
+.disconnected {
+  background: red;
 }
 </style>
