@@ -14,9 +14,11 @@ class DanmakuManager {
     this.stillDanmakuTimeout = 4000
   }
 
-  bindContainer (container) {
-    console.log('bindContainer')
-    this.danmakuContainer = container
+  bindContainer (container = null) {
+    // console.log('bindContainer')
+    // this.danmakuContainer = container
+    if (container) this.danmakuContainer = container
+    else this.danmakuContainer = document.getElementById('danmakuContainer')
   }
 
   pauseMove () {
@@ -95,6 +97,7 @@ class DanmakuManager {
   }
 
   createElement (text, color, position) {
+    this.bindContainer()
     const element = document.createElement('span')
     this.danmakuContainer.appendChild(element)
     element.position = position
@@ -103,7 +106,7 @@ class DanmakuManager {
       this.danmakuConfig.Opacity / 10
     }; color: ${color}; font-family: ${
       this.danmakuConfig.FontFamily
-    }; font-weight: ${this.danmakuConfig.Bold ? 'bold' : 'normal'}`
+    }; font-weight: ${this.danmakuConfig.Bold ? 'bold' : 'normal'};`
     element.style.width = element.offsetWidth + 2 + 'px'
     element.width = element.offsetWidth + 2
     element.maxMove = this.danmakuContainer.clientWidth + element.width * 2
@@ -161,9 +164,13 @@ class DanmakuManager {
         (x) => x.step === this.danmakuLastStep
       )
       const lastElement = arr[arr.length - 1]
-      const rightOffset =
-        containerWidth - lastElement.offsetLeft - lastElement.clientWidth
-      element.style.right = `${rightOffset - lastElement.clientWidth - 5}px`
+      if (lastElement) {
+        const rightOffset = containerWidth - lastElement.offsetLeft - lastElement.clientWidth
+        element.maxMove += lastElement.clientWidth + 5
+        element.style.right = `${rightOffset - lastElement.clientWidth - 5}px`
+      } else {
+        element.style.right = `${containerWidth - 5}px`
+      }
     } else {
       this.danmakuLastStep = step
     }
