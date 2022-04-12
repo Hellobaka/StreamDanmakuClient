@@ -1,8 +1,8 @@
 <template>
-  <div id="clientFrame" style="display: flex;height: 802px;" @mousemove="toolbarActiveChange" data-app="true">
+  <div id="clientFrame" style="display: flex;height: 768px;" @mousemove="toolbarActiveChange" data-app="true">
     <div id="videoContainer" @contextmenu="showMenu">
       <div class="slimScrollbar" id="logs" v-if="showLogs">
-        <p v-for="log in logs" :key="log.id">{{log.Content}}</p>
+        <p class="logItem" v-for="log in logs" :key="log.id">{{log.Content}}</p>
         <p id="logBottom"></p>
       </div>
       <div id="danmakuContainer" ref="danmakuContainer" v-show="showDanmaku" style="position: absolute; width: 100%; z-index: 9; height:95%">
@@ -635,7 +635,7 @@ export default {
       this.danmakuID++
       this.$nextTick(() => {
         document.querySelector('#danmakuBottom').scrollIntoView()
-        for (let i = 0; i < 1; i++) {
+        for (let i = 0; i < 50; i++) {
           this.danmakuManager.createElement(content, color, position)
         }
       })
@@ -733,6 +733,13 @@ export default {
   },
   beforeDestroy () {
     this.ipcOff()
+    if (this.videoPlayer) {
+      this.videoPlayer.pause()
+      this.videoPlayer.unload()
+      this.videoPlayer.detachMediaElement()
+      this.videoPlayer.destroy()
+    }
+
     this.$vuetify.theme.dark = false
     this.server.Emit('Leave', {})
     this.danmakuManager.destroy()
@@ -750,7 +757,7 @@ export default {
   user-select: none;
   pointer-events: none;
   /* 我超，为什么b站弹幕是用canvas画的 */
-  /* -webkit-text-stroke: 1px white; */
+  -webkit-text-stroke: 0.5px black;
   /* text-shadow: 1px 1px #fff; */
 }
 .danmakuMoveItem {
@@ -938,5 +945,8 @@ export default {
   margin-left: 5px;
   border: 2px solid white;
   border-radius: 3px;
+}
+.logItem {
+  margin-bottom: 5px;
 }
 </style>
