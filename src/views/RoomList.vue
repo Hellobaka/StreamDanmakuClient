@@ -68,7 +68,7 @@
         @mouseover="tipNewShow = true"
         @mouseleave="tipNewShow = false"
         @click="callNewRoom"
-        style="position:fixed;right:20px;bottom:90px;"
+        style="position:fixed;right:20px;bottom:118px;"
       >
         <v-icon>mdi-plus-box-outline</v-icon>
       </v-btn>
@@ -84,7 +84,7 @@
         fab
         dark
         @click="callTop"
-        style="position:fixed;right:20px;bottom:20px;"
+        style="position:fixed;right:20px;bottom:48px;"
       >
         <v-icon>mdi-arrow-collapse-up</v-icon>
       </v-btn>
