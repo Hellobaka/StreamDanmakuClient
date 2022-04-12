@@ -8,7 +8,7 @@
       </v-btn>
     </v-card-title>
     <v-card-text>
-      <v-container>
+      <v-container class="slimScrollbar" style="max-height: 500px; overflow-y: scroll; overflow-x: hidden;">
         <v-list subheader>
           <v-subheader>主题颜色设置</v-subheader>
           <v-list-item @click="colorPicker=!colorPicker">

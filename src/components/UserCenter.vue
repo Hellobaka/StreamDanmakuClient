@@ -8,7 +8,7 @@
       </v-btn>
     </v-card-title>
     <v-card-text>
-      <v-container fluid>
+      <v-container class="slimScrollbar" style="max-height: 500px; overflow-y: scroll; overflow-x: hidden;">
         <v-row style="align-items: center"> </v-row>
         <v-list subheader style="margin: 20px 0">
           <v-subheader>头像及昵称</v-subheader>
@@ -77,7 +77,7 @@
     </v-card-text>
     <v-card-actions>
       <v-spacer></v-spacer>
-      <v-btn @click="closeDialog" text>关闭</v-btn>
+      <v-btn @click="closeDialog" text color="primary">关闭</v-btn>
     </v-card-actions>
   </v-card>
 </template>
