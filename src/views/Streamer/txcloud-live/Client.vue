@@ -293,7 +293,8 @@ export default {
       danmakuItemList: [],
       danmakuLastStep: 0,
       danmakuMaxStep: 26,
-      danmakuColors: ['#ffffff', '#000000', '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#00ffff', '#ff00ff', '#66ccff', '#7fffd4', '#00bfff', '#98fb98']
+      danmakuColors: ['#ffffff', '#000000', '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#00ffff', '#ff00ff', '#66ccff', '#7fffd4', '#00bfff', '#98fb98'],
+      captureTimer: 0
     }
   },
   watch: {
@@ -557,6 +558,7 @@ export default {
       })
       player.on(flvjs.Events.ERROR, (errorType, errorDetail, errorInfo) => {
         this.loading = true
+        clearInterval(this.captureTimer)
         this.writeLog('errorType:' + errorType)
         this.writeLog('errorDetail:' + errorDetail)
         this.writeLog('errorInfo:' + errorInfo)
@@ -576,6 +578,7 @@ export default {
       })
       player.on(flvjs.Events.LOADING_COMPLETE, () => {
         this.loading = true
+        clearInterval(this.captureTimer)
         player.pause()
         player.unload()
         player.detachMediaElement()
@@ -585,6 +588,9 @@ export default {
       player.on(flvjs.Events.METADATA_ARRIVED, () => {
         this.loading = false
         this.writeLog('拉流元数据获取成功')
+        this.captureTimer = setInterval(() => {
+          this.captureImage()
+        }, 5 * 60 * 1000)
         player.play()
         this.catchFrameTimer = setInterval(() => {
           if (videoElement.buffered.length > 0) {
@@ -635,7 +641,7 @@ export default {
       this.danmakuID++
       this.$nextTick(() => {
         document.querySelector('#danmakuBottom').scrollIntoView()
-        for (let i = 0; i < 50; i++) {
+        for (let i = 0; i < 1; i++) {
           this.danmakuManager.createElement(content, color, position)
         }
       })
@@ -693,6 +699,25 @@ export default {
     },
     clearDanmaku () {
       this.danmakuList = []
+    },
+    captureImage () {
+      var canvas = document.createElement('canvas')
+      canvas.width = this.videoContainer.videoWidth * 0.5
+      canvas.height = this.videoContainer.videoHeight * 0.5
+      canvas.getContext('2d')
+        .drawImage(this.videoContainer, 0, 0, canvas.width, canvas.height)
+      canvas.toBlob((blob) => {
+        const a = new FileReader()
+        a.onload = (e) => {
+          this.uploadCapture(e.target.result)
+        }
+        a.readAsDataURL(blob)
+      })
+    },
+    uploadCapture (base64) {
+      this.server.Emit('UploadCapture', {
+        base64
+      })
     },
     handleDanmaku (data) {
       if (this.danmakuBlocker.keywords.length > 0) {

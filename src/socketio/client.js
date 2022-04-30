@@ -39,11 +39,11 @@ function init () {
     if (!streamFlag) streamFlag = await readSessionStorage('StreamFlag')
     console.log('Connected to Server.')
     if (streamFlag) {
-      Emit('GetInfo', { loginFlag: true, jwt: loadLocalConfig('JWT').token, streamFlag: true })
+      Emit('GetInfo', { type: 'client', loginFlag: true, jwt: loadLocalConfig('JWT').token, streamFlag: true })
     } else if (!streamFlag && await readSessionStorage('LoginFlag')) {
-      Emit('GetInfo', { loginFlag: true, jwt: loadLocalConfig('JWT').token })
+      Emit('GetInfo', { type: 'client', loginFlag: true, jwt: loadLocalConfig('JWT').token })
     } else {
-      Emit('GetInfo', { loginFlag: false })
+      Emit('GetInfo', { type: 'client', loginFlag: false })
     }
     if (this.OnOpen) this.OnOpen()
     // await writeSessionStorage('user', null)
