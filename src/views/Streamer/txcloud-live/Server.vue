@@ -94,7 +94,7 @@
 // eslint-disable-next-line no-unused-vars
 import { screen, Tray, Menu } from '@electron/remote'
 import { loadLocalConfig, copyText } from '@/utils/tools'
-import { Confirm } from '@/utils/dialog'
+import { Info, Confirm } from '@/utils/dialog'
 import moment from 'moment'
 import { RestoreWindow } from '../../../utils/windowsHelper'
 
@@ -216,6 +216,7 @@ export default {
     })
     this.server.On('OnLeave', this.OnLeave)
     this.server.On('OnEnter', this.OnEnter)
+    this.server.On('Admin_CallRoomDestroy', this.handleAdminCutStream)
     // 重连后恢复房间状态
     this.server.OnOpen = () => {
       this.server.On('ResumeRoom', data => {
@@ -412,6 +413,11 @@ export default {
     inputOnBlur () {
       this.danmakuInputFlag = false
       this.$refs.danmakuSender.style.boxShadow = `0px 0px 0px 0px ${this.$vuetify.theme.themes.light.primary}`
+    },
+    handleAdminCutStream (data) {
+      Info('直播已被切断，点击确认返回房间列表', data).finally(() => {
+        this.$router.go(-1)
+      })
     }
   }
 }

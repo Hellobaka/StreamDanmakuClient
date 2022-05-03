@@ -345,6 +345,7 @@ export default {
     this.server.On('OnDanmaku', this.handleDanmaku)
     this.server.On('StreamerOffline', this.handleStreamerOffline)
     this.server.On('StreamerReConnect', this.handleStreamerReConnect)
+    this.server.On('Admin_CallRoomDestroy', this.handleAdminCutStream)
     this.server.Emit('RoomEntered', { id: this.$route.query.id })
     this.videoContainer = document.querySelector('#video-container')
     // 重连后恢复房间状态
@@ -754,6 +755,12 @@ export default {
     handleStreamerReConnect () {
       this.server.Emit('RoomEntered', { id: this.$route.query.id })
       this.snackbar.Info('主播恢复连线，尝试重新连接...')
+    },
+    handleAdminCutStream (data) {
+      this.videoPlayer.unload()
+      Info('直播被切断，点击确定返回房间列表', data).finally(() => {
+        this.$router.go(-1)
+      })
     }
   },
   beforeDestroy () {
