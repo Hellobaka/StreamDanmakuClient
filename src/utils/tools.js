@@ -61,23 +61,18 @@ export function loadLocalConfig (section, isLoginConfig = false) {
     return newConfig[section]
   }
 }
-export async function writeSessionStorage (key, object) {
+export function writeSessionStorage (key, object) {
   console.log('write', key, object)
-  await session.defaultSession.cookies.set({ url: 'http://streamer.hellobaka.xyz', value: JSON.stringify(object), name: key })
-    .catch((error) => {
-      console.error(error)
-    })
+  sessionStorage.setItem(key, JSON.stringify(object))
+  // await session.defaultSession.cookies.set({ url: 'http://streamer.hellobaka.xyz', value: JSON.stringify(object), name: key })
+  //   .catch((error) => {
+  //     console.error(error)
+  //   })
   // Cookies.set(key, JSON.stringify(object), { path: 'http://streamer.hellobaka.xyz' })
   // app.global.Application[key] = object
 }
-export async function readSessionStorage (key) {
-  const result = await session.defaultSession.cookies.get({ url: 'http://streamer.hellobaka.xyz' })
-  const r = JSON.parse(result.find(x => x.name === key)?.value || null)
-  console.log('read', key, r)
-  return r
-  // console.log(Cookies.get())
-  // return JSON.parse(Cookies.get(key) || null)
-  // return app.global.Application[key]
+export function readSessionStorage (key) {
+  return JSON.parse(sessionStorage.getItem(key))
 }
 export function copyText (text) {
   clipboard.writeText(text)
@@ -119,8 +114,7 @@ export function rulesVerify (result) {
 }
 export async function logout (router) {
   writeLocalConfig('Config', 'autoLogin', false)
-  await writeSessionStorage('LoginFlag', false)
-  await writeSessionStorage('user', null)
+  writeSessionStorage('user', null)
   routerJump(router, './', true)
 }
 const listener = []

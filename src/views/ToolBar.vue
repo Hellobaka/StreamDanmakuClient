@@ -119,7 +119,7 @@ export default {
       }, 500)
     },
     async OpenUserCenter () {
-      if (await readSessionStorage('LoginFlag')) this.userCenterOn = true
+      if (readSessionStorage('user')) this.userCenterOn = true
       else {
         const res = await Confirm('暂未登录，是否前往登录页面？', '未登录')
         if (res) {
@@ -143,14 +143,6 @@ export default {
   },
   async mounted () {
     this.$vuetify.theme.themes.light.primary = '#3f51b5'
-    // await writeSessionStorage('LoginFlag', false)
-    // await writeSessionStorage('user', null)
-    // this.config = loadLocalConfig('Config')
-    // // writeSessionStorage('Config', this.config)
-    // if (this.config && this.config.themeColor) {
-    //   this.$vuetify.theme.themes.light.primary = this.config.themeColor
-    // }
-    // console.log('Load Local Config Success.')
     this.init()
   }
 }

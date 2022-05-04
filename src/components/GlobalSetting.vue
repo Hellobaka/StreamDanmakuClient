@@ -247,7 +247,6 @@ export default {
   mounted () {
     const config = loadLocalConfig('Config')
     if (config) this.Config = config
-    // writeSessionStorage('Config', config)
     navigator.mediaDevices.enumerateDevices()
       .then(items => {
         items.filter(x => x.kind === 'audiooutput').forEach(x => {

@@ -2,12 +2,11 @@ const url = 'ws://127.0.0.1:6235/main'
 let reconnectCount = 0
 
 const { Info } = require('../utils/dialog')
-const { readSessionStorage, writeSessionStorage, loadLocalConfig, routerJump, writeLocalConfig } = require('../utils/tools')
+const { writeSessionStorage, routerJump, readSessionStorage } = require('../utils/tools')
 
 Window.$WebSocket = { connection: new WebSocket(url) }
 const server = Window.$WebSocket
 init()
-let streamFlag = null
 const onList = []
 function reconnect () {
   reconnectCount++
@@ -36,22 +35,19 @@ function init () {
   }
   server.connection.onopen = async (e) => {
     reconnectCount = 0
-    if (!streamFlag) streamFlag = await readSessionStorage('StreamFlag')
     console.log('Connected to Server.')
-    if (streamFlag) {
-      Emit('GetInfo', { type: 'client', loginFlag: true, jwt: loadLocalConfig('JWT').token, streamFlag: true })
-    } else if (!streamFlag && await readSessionStorage('LoginFlag')) {
-      Emit('GetInfo', { type: 'client', loginFlag: true, jwt: loadLocalConfig('JWT').token })
-    } else {
-      Emit('GetInfo', { type: 'client', loginFlag: false })
-    }
+    const token = readSessionStorage('JWT')
+    Emit('GetInfo', { type: 'client', jwt: token || '' })
     if (this.OnOpen) this.OnOpen()
-    // await writeSessionStorage('user', null)
   }
 }
 function Emit (type, msg) {
-  if (server.connection.readyState !== 1) throw new Error('No Connection With Server')
+  if (server.connection.readyState !== 1) {
+    onList[type]({ msg: '未与服务器建立连接' })
+    return false
+  }
   server.connection.send(JSON.stringify({ type, data: msg }))
+  return true
 }
 
 function On (type, callback) {
@@ -68,8 +64,8 @@ server.On('HeartBeat', (data) => {
 server.On('GetInfoResult', async (data) => {
   console.log('InfoResult: ', data)
   if (data.code !== 200) {
-    await writeSessionStorage('user', null)
-    await writeSessionStorage('LoginFlag', false)
+    writeSessionStorage('user', null)
+    writeSessionStorage('JWT', '')
     await Info(data.msg)
     server.TempGetInfoCallback(data)
     server.TempGetInfoCallback = (data) => {}
@@ -77,9 +73,7 @@ server.On('GetInfoResult', async (data) => {
   } else {
     if (data.data) {
       server.user = data.data
-      await writeSessionStorage('user', data.data)
-      await writeSessionStorage('LoginFlag', true)
-      writeLocalConfig('Session', 'UserID', data.data.Id, true)
+      writeSessionStorage('user', data.data)
     }
     server.TempGetInfoCallback(data)
     server.TempGetInfoCallback = (data) => {}

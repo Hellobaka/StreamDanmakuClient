@@ -118,7 +118,7 @@ export default {
         if (data.code === 200) {
           this.snackbar.Success('修改成功')
           this.user.NickName = this.editNickName
-          await writeSessionStorage('user', this.user)
+          writeSessionStorage('user', this.user)
           this.nickEditFlag = false
         } else {
           this.snackbar.Error(data.msg)
@@ -145,7 +145,7 @@ export default {
     }
   },
   async mounted () {
-    this.user = await readSessionStorage('user')
+    this.user = readSessionStorage('user')
   }
 }
 </script>

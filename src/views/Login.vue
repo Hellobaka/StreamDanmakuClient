@@ -16,7 +16,7 @@
     <div style="display: flex; align-items:center;">
       <v-switch v-model="loginConfig.rememberPassword" label="记住密码" style="margin-right: 2vw;" @change="loginConfigChange('RememberPassword')"></v-switch>
       <v-switch v-model="loginConfig.autoLogin" label="自动登录" @change="loginConfigChange('AutoLogin')"></v-switch>
-      <v-btn :loading="formSend" @click="$router.push('./forgetpwd')" style="margin-left: 10px;">找回密码</v-btn>
+      <v-btn :loading="formSend" @click="$router.push('forgetpwd')" style="margin-left: 10px;">找回密码</v-btn>
     </div>
 
     <v-container style="display: flex;justify-content: space-around">
@@ -73,27 +73,28 @@ export default {
       writeLocalConfig('LoginConfig', 'account', this.loginConfig.account, true)
       this.server.On('Login', (data) => {
         if (data.code === 200) {
-          writeLocalConfig('JWT', 'token', data.data)
-          this.server.Emit('GetInfo', { loginFlag: true, jwt: data.data })
+          writeSessionStorage('JWT', data.data)
+          this.server.Emit('GetInfo', { type: 'client', jwt: data.data })
         } else {
           this.snackbar.Error(data.msg)
           this.formSend = false
         }
       })
-      this.server.TempGetInfoCallback = async (data) => {
+      this.server.TempGetInfoCallback = (data) => {
         this.formSend = false
         if (data.code === 200) {
           this.snackbar.Success('登录成功')
           if (this.loginConfig.rememberPassword) {
             writeLocalConfig('LoginConfig', 'password', this.loginConfig.password, true)
           }
-          await writeSessionStorage('LoginFlag', true)
           this.$router.replace({ path: './roomList' })
         } else {
           this.snackbar.Error(data.msg)
         }
       }
-      this.server.Emit('Login', form)
+      if (!this.server.Emit('Login', form)) {
+        this.formSend = false
+      }
     },
     loginConfigChange (config) {
       switch (config) {

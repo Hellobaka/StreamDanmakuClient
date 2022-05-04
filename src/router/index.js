@@ -31,6 +31,11 @@ const routes = [
         component: () => import('../views/Register.vue')
       },
       {
+        path: 'forgetpwd',
+        name: '忘记密码',
+        component: () => import('../views/ForgetPassword.vue')
+      },
+      {
         path: 'txcloud-live/client',
         name: 'live-客户端',
         component: () => import('../views/Streamer/txcloud-live/Client.vue')
@@ -94,9 +99,10 @@ const routes = [
 const router = new VueRouter({
   routes
 })
-const whiteList = ['/login', '/register']
+const whiteList = ['/login', '/register', '/forgetpwd']
 router.beforeEach(async (to, from, next) => {
   document.title = `${to.name} - webrtc-client`
+  console.log(to)
   if (whiteList.includes(to.path)) {
     next()
     return
