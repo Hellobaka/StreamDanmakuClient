@@ -134,15 +134,14 @@ export default {
     async closeApplication () {
       const res = await Confirm('确定要退出吗？', '确认')
       if (res) {
-        require('@electron/remote').getCurrentWindow().close()
+        require('@electron/remote').app.exit()
       }
     },
     callListener (event) {
       emit(event)
     }
   },
-  async mounted () {
-    this.$vuetify.theme.themes.light.primary = '#3f51b5'
+  mounted () {
     this.init()
   }
 }

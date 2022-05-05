@@ -6,6 +6,7 @@ const path = require('path')
 const { app, session } = require('@electron/remote')
 import store from '@/store'
 import { clipboard } from 'electron'
+const snackbar = require('@/utils/snackbar').default
 import { Confirm } from './dialog'
 
 const md5 = require('js-md5')
@@ -70,7 +71,7 @@ export function readSessionStorage (key) {
 }
 export function copyText (text) {
   clipboard.writeText(text)
-  this.snackbar.Success('复制成功')
+  snackbar.Success('复制成功')
 }
 
 export function getTemplateConfig () {

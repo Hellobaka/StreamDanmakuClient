@@ -68,7 +68,6 @@ const router = new VueRouter({
 const whiteList = ['/login', '/register', '/forgetpwd']
 router.beforeEach(async (to, from, next) => {
   document.title = `${to.name} - webrtc-client`
-  console.log(to)
   if (whiteList.includes(to.path)) {
     next()
     return

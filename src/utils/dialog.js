@@ -6,8 +6,7 @@ export function Confirm (text, title) {
     title,
     actions: {
       false: {
-        text: '否',
-        color: 'black'
+        text: '否'
       },
       true: {
         text: '是',

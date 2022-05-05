@@ -14,6 +14,7 @@ export default {
   mounted () {
     document.querySelector('body').classList.add('slimScrollbar')
     this.config = loadLocalConfig('Config')
+    console.log(this.config)
     if (this.config && this.config.themeColor) {
       this.$vuetify.theme.themes.light.primary = this.config.themeColor
     }

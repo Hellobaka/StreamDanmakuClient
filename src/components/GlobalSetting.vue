@@ -104,9 +104,6 @@ export default {
       this.stopInput()
     }
   },
-  beforeDestroy () {
-    this.stopInput()
-  },
   mounted () {
     const config = loadLocalConfig('Config')
     if (config) this.Config = config
