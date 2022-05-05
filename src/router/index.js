@@ -38,24 +38,7 @@ const routes = [
       {
         path: 'txcloud-live/client',
         name: 'live-客户端',
-        component: () => import('../views/Streamer/txcloud-live/Client.vue')
-      }
-    ]
-  },
-  {
-    path: '/streamer',
-    name: 'Streamer',
-    component: () => import('../views/Streamer/Layout.vue'),
-    children: [
-      {
-        path: 'client',
-        name: '客户端',
         component: () => import('../views/Streamer/Client.vue')
-      },
-      {
-        path: 'server',
-        name: '推流端',
-        component: () => import('../views/Streamer/Server.vue')
       }
     ]
   },
@@ -67,25 +50,8 @@ const routes = [
       {
         path: 'server',
         name: 'live-推流端',
-        component: () => import('../views/Streamer/txcloud-live/Server.vue')
+        component: () => import('../views/Streamer/Server.vue')
       }
-    ]
-  },
-  {
-    path: '/TRTC-streamer',
-    name: 'TRTC-Streamer',
-    component: () => import('../views/Streamer/Layout.vue'),
-    children: [
-      // {
-      //   path: 'client',
-      //   name: 'TRTC客户端',
-      //   component: () => import('../views/Streamer/TRTC/Client.vue')
-      // },
-      // {
-      //   path: 'server',
-      //   name: 'TRTC推流端',
-      //   component: () => import('../views/Streamer/TRTC/Server.vue')
-      // }
     ]
   },
   {
