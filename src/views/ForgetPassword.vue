@@ -103,7 +103,7 @@
 
 <script>
 import { Info } from '../utils/dialog'
-import { md5Encrypt, routerJump } from '../utils/tools'
+import { md5Encrypt, routerJump, writeSessionStorage } from '../utils/tools'
 
 export default {
   name: 'ChangePassword',
@@ -265,6 +265,7 @@ export default {
         this.forgetForm.finalLoading = false
         if (data.code === 200) {
           Info('修改成功，点击确定重新登录。', '密码重置').then(async () => {
+            writeSessionStorage('JWT', '')
             routerJump(this.$router, '/login', true)
           })
         } else {
