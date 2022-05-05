@@ -3,10 +3,20 @@
 </template>
 
 <script>
+import { loadLocalConfig } from './utils/tools'
 export default {
   name: 'App',
+  data () {
+    return {
+      config: {}
+    }
+  },
   mounted () {
     document.querySelector('body').classList.add('slimScrollbar')
+    this.config = loadLocalConfig('Config')
+    if (this.config && this.config.themeColor) {
+      this.$vuetify.theme.themes.light.primary = this.config.themeColor
+    }
   }
 }
 </script>

@@ -104,7 +104,7 @@ import moment from 'moment'
 import NewRoom from '../components/NewRoom.vue'
 import RoomPassword from '../components/RoomPassword.vue'
 import JoinRoom from '../components/JoinRoom.vue'
-import { loadLocalConfig, addListener, removeListener } from '../utils/tools'
+import { addListener, removeListener } from '../utils/tools'
 import { LoadStreamerURL } from '../utils/windowsHelper'
 import { Confirm } from '../utils/dialog'
 export default {
@@ -340,11 +340,6 @@ export default {
     String.prototype.contain = function (pattern) {
       return this.indexOf(pattern) !== -1
     }
-    this.config = loadLocalConfig('Config')
-    if (this.config && this.config.themeColor) {
-      this.$vuetify.theme.themes.light.primary = this.config.themeColor
-    }
-    console.log('Load Local Config Success.')
     this.getRoomList()
     this.server.On('OnlineUserCount', data => {
       this.onlineUserCount = data.count
