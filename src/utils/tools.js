@@ -89,20 +89,8 @@ export function getTemplateConfig () {
     },
     Config: {
       themeColor: '#3f51b5',
-      bitrate_Stream: 9000,
-      framerate_Stream: 60,
-      bitrate_Client: 9000,
-      framerate_Client: 60,
-      audio_Input: '',
-      audio_Output: '',
-      input: '',
-      inputDeviceID: '',
-      outputDeviceID: '',
       danmakuDefault: true,
-      danmakuRemember: true,
-      p2pAssist: true,
-      stunServer: '',
-      turnServer: ''
+      danmakuRemember: true
     }
   }
   return Config
