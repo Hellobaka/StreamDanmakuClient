@@ -207,21 +207,7 @@ export default {
       this.server.On('EnterRoom', (data) => {
         this.formSend = false
         if (data.code === 200) {
-          switch (room.Mode) {
-            case 0: // trtc
-              // createChildWindow(`TRTC-streamer/client?id=${id}`, true)
-              break
-            case 1: // 普通快直播
-              LoadStreamerURL(this.$router, `txcloud-live/client?id=${id}`, true)
-              break
-            case 2: // 自搭
-              // createChildWindow(`streamer/client?id=${id}`, true)
-              break
-            case 3: // 语音
-              break
-            default:
-              break
-          }
+          LoadStreamerURL(this.$router, `txcloud-live/client?id=${id}`, true)
         } else {
           this.snackbar.Error(data.msg)
         }
