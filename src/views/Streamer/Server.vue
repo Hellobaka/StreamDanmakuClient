@@ -56,6 +56,7 @@
             </span>
             <span style="word-break: break-all;word-wrap: break-word;overflow: auto;">{{item.Content}}</span>
           </v-list-item>
+          <div id="danmakuBottom"></div>
         </v-list>
         <v-menu v-model="menuDanmaku" :position-x="menuX" :position-y="menuY" absolute offset-y>
           <v-list min-width="150px" dark style="background-color: rgba(100,100,100,.8);">
@@ -129,7 +130,8 @@ export default {
       danmakuInput: '',
       danmakuColor: '#FFFFFF',
       danmakuPosition: '0',
-      danmakuInputFlag: false
+      danmakuInputFlag: false,
+      isMuted: false
     }
   },
   computed: {
@@ -209,11 +211,7 @@ export default {
       }
     })
     this.server.Emit('RoomInfo', '')
-    this.server.On('OnDanmaku', data => {
-      data.id = this.danmakuList.length
-      data.log = false
-      this.danmakuList.push(data)
-    })
+    this.server.On('OnDanmaku', this.handleDanmaku)
     this.server.On('OnLeave', this.OnLeave)
     this.server.On('OnEnter', this.OnEnter)
     this.server.On('Admin_CallRoomDestroy', this.handleAdminCutStream)
@@ -234,6 +232,12 @@ export default {
     this.$vuetify.theme.dark = true
   },
   methods: {
+    handleDanmaku (data) {
+      data.id = this.danmakuList.length
+      data.log = false
+      this.danmakuList.push(data)
+      this.$nextTick(() => { document.querySelector('#danmakuBottom').scrollIntoView() })
+    },
     timeFormat (time) {
       return moment(time).format('HH:mm:ss')
     },
@@ -394,9 +398,14 @@ export default {
       }
       const danmaku = content || this.danmakuInput
       this.server.On('SendDanmaku', data => {
+        console.log(data)
         if (data.code === 200) {
           if (!content) this.danmakuInput = ''
+          document.querySelector('#danmakuBottom').scrollIntoView()
         } else {
+          if (data.code === 505) {
+            this.isMuted = true
+          }
           this.snackbar.Error(data.msg)
         }
       })
