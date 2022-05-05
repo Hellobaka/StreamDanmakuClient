@@ -13,7 +13,7 @@ const SALT = 'I AM FW'
 
 const isDev = !app.isPackaged
 const appRoot = isDev ? path.resolve(__dirname, '..', '..') : path.resolve(app.getAppPath(), '..', '..')
-const userDataPath = path.resolve('E:\\Code\\webrtc-client\\dist_electron', isDev ? 'userData' : 'userData2')
+const userDataPath = path.resolve('E:\\Code\\webrtc-client\\dist_electron', 'userData')
 const loginConfigPath = path.resolve(userDataPath, 'Config.json')
 const userPath = app.getPath('userData')
 
@@ -64,12 +64,6 @@ export function loadLocalConfig (section, isLoginConfig = false) {
 export function writeSessionStorage (key, object) {
   console.log('write', key, object)
   sessionStorage.setItem(key, JSON.stringify(object))
-  // await session.defaultSession.cookies.set({ url: 'http://streamer.hellobaka.xyz', value: JSON.stringify(object), name: key })
-  //   .catch((error) => {
-  //     console.error(error)
-  //   })
-  // Cookies.set(key, JSON.stringify(object), { path: 'http://streamer.hellobaka.xyz' })
-  // app.global.Application[key] = object
 }
 export function readSessionStorage (key) {
   return JSON.parse(sessionStorage.getItem(key))
