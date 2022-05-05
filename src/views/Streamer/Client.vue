@@ -205,20 +205,21 @@
           <v-btn icon @click="clearDanmaku"><v-icon>mdi-delete</v-icon></v-btn>
         </v-subheader>
         <v-list-item v-for="item in danmakuList" :key="item.id" dense style="flex-wrap: wrap;" @mousedown.right.stop="showMenu($event, true, item)">
-          <span v-if="item.log" style="color:skyblue">
+          <span v-if="item.SenderUserName === 'Admin'" style="color:skyblue">
             <v-icon small color="#66ccff">mdi-wrench</v-icon>
           </span>
-          <span v-if="!item.log" style="color:skyblue">
+          <span v-if="!item.log" style="color:skyblue; cursor:default;">
             {{item.SenderUserName}}:
           </span>
           <span style="word-break: break-all;word-wrap: break-word;overflow: auto;">{{item.Content}}</span>
         </v-list-item>
         <v-menu v-model="menuDanmaku" :position-x="menuX" :position-y="menuY" absolute offset-y>
           <v-list min-width="150px" dark style="background-color: rgba(100,100,100,.8);">
-            <v-list-item :disabled="currentDanmaku==null" @click="callCopy(currentDanmaku.Content)">复制{{currentDanmaku==null?'':currentDanmaku.Content}}</v-list-item>
+            <v-list-item :disabled="currentDanmaku==null" @click="callCopy(currentDanmaku.Content)">复制 {{currentDanmaku==null?'':currentDanmaku.Content}}</v-list-item>
             <v-list-item :disabled="currentDanmaku==null" @click="clickable">添加好友</v-list-item>
             <v-list-item :disabled="currentDanmaku==null" @click="sendDanmaku(currentDanmaku.Content)">复读</v-list-item>
             <v-list-item dense><v-divider></v-divider></v-list-item>
+            <v-list-item :disabled="currentDanmaku==null || canBlock(currentDanmaku)" @click="clearDanmaku">屏蔽用户</v-list-item>
             <v-list-item @click="clearDanmaku">清空弹幕</v-list-item>
           </v-list>
         </v-menu>
@@ -335,10 +336,10 @@ export default {
       return loadLocalConfig('Config')
     }
   },
-  async mounted () {
+  mounted () {
     this.thisWindow = require('@electron/remote').getCurrentWindow()
     this.thisWindow.show()
-    this.user = await readSessionStorage('user')
+    this.user = readSessionStorage('user')
     this.server.On('RoomEntered', this.handleRoomEnter)
     this.server.On('RoomVanish', this.handleRoomVanish)
     this.server.On('RoomClose', this.handleRoomClose)
@@ -378,6 +379,9 @@ export default {
     this.ipcInit()
   },
   methods: {
+    canBlock (danmaku) {
+      return danmaku.SenderUserName === 'Admin'
+    },
     ipcInit () {
       this.thisWindow.on('resize', this.resizeHandle)
       addListener('player-play', () => {
@@ -490,7 +494,7 @@ export default {
       const danmaku = content || this.danmakuInput
       this.server.On('SendDanmaku', data => {
         if (data.code === 200) {
-          this.AddDanmaku(danmaku, this.danmakuConfig.Color, this.danmakuConfig.Position)
+          this.AddDanmaku(danmaku, this.danmakuConfig.Color, this.danmakuConfig.Position, false, true, false)
           if (!content) this.danmakuInput = ''
         } else {
           this.snackbar.Error(data.msg)
@@ -529,7 +533,7 @@ export default {
 
         this.writeLog('房间加入成功')
         this.roomInstance = data.data.roomInfo
-        this.server.Emit('GetPullUrl', { type: 1 })
+        // this.server.Emit('GetPullUrl', { type: 1 })
         this.server.Emit('GetRoomDanmaku', '')
       }
     },
@@ -633,7 +637,7 @@ export default {
     danmakuListToggle () {
       this.danmakuListShow = !this.danmakuListShow
     },
-    AddDanmaku (content, color, position) {
+    AddDanmaku (content, color, position, showWrench, self, streamer) {
       position = parseInt(position)
       if (!this.showDanmaku) return
       if (this.danmakuList.length > this.maxDanmakuCount) {
@@ -643,7 +647,7 @@ export default {
       this.$nextTick(() => {
         document.querySelector('#danmakuBottom').scrollIntoView()
         for (let i = 0; i < 1; i++) {
-          this.danmakuManager.createElement(content, color, position)
+          this.danmakuManager.createElement(content, color, position, showWrench, self, streamer)
         }
       })
     },
@@ -738,7 +742,7 @@ export default {
       data.log = false
       this.danmakuList.push(data)
       if (data.SenderUserID !== this.user.Id) {
-        this.AddDanmaku(data.Content, data.Color, data.Position)
+        this.AddDanmaku(data.Content, data.Color, data.Position, data.SenderUserName === 'Admin', data.SenderUserName === this.user.nickName, data.SenderUserName === this.roomInstance.CreatorName)
       }
     },
     async closeClient () {
@@ -772,6 +776,14 @@ export default {
       this.videoPlayer.destroy()
     }
 
+    this.server.On('RoomEntered', () => {})
+    this.server.On('RoomVanish', () => {})
+    this.server.On('RoomClose', () => {})
+    this.server.On('OnDanmaku', () => {})
+    this.server.On('StreamerOffline', () => {})
+    this.server.On('StreamerReConnect', () => {})
+    this.server.On('Admin_CallRoomDestroy', () => {})
+
     this.$vuetify.theme.dark = false
     this.server.Emit('Leave', {})
     this.danmakuManager.destroy()
@@ -788,7 +800,6 @@ export default {
   position: absolute;
   user-select: none;
   pointer-events: none;
-  /* 我超，为什么b站弹幕是用canvas画的 */
   -webkit-text-stroke: 0.5px black;
   /* text-shadow: 1px 1px #fff; */
 }

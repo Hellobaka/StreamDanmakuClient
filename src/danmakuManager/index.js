@@ -96,17 +96,23 @@ class DanmakuManager {
     })
   }
 
-  createElement (text, color, position) {
+  createElement (text, color, position, showWrench = false, self = false, streamer = false) {
     this.bindContainer()
     const element = document.createElement('span')
     this.danmakuContainer.appendChild(element)
     element.position = position
-    element.innerText = text
+    if (showWrench) {
+      element.innerHTML = `<span><i aria-hidden="true" style="color:skyblue;" class="v-icon notranslate mdi mdi-wrench theme--dark"></i></span>${text}`
+    } else if (streamer) {
+      element.innerHTML = `<span><i aria-hidden="true" style="color:skyblue;" class="v-icon notranslate mdi mdi-broadcast theme--dark"></i></span>${text}`
+    } else {
+      element.innerText = text
+    }
     element.style = `font-size: ${this.danmakuConfig.FontSize}px; opacity: ${
       this.danmakuConfig.Opacity / 10
     }; color: ${color}; font-family: ${
       this.danmakuConfig.FontFamily
-    }; font-weight: ${this.danmakuConfig.Bold ? 'bold' : 'normal'};`
+    }; font-weight: ${this.danmakuConfig.Bold ? 'bold' : 'normal'}; ${self ? 'border: 1px solid rgb(54,166,242);' : ''}`
     element.style.width = element.offsetWidth + 2 + 'px'
     element.width = element.offsetWidth + 2
     element.maxMove = this.danmakuContainer.clientWidth + element.width * 2
