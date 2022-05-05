@@ -1,6 +1,6 @@
 <template>
   <v-container transition="fade-transition">
-    <v-text-field label="账号" v-model="loginConfig.account" :disabled="formSend" :rules="rules.account"></v-text-field>
+    <v-text-field label="账号" @keydown.enter="handleAccountEnter" v-model="loginConfig.account" :disabled="formSend" :rules="rules.account"></v-text-field>
     <v-text-field
       v-model="loginConfig.password"
       :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
@@ -9,6 +9,7 @@
       :rules="rules.password"
       label="密码"
       hint="至少8个字符"
+      ref="password"
       @click:append="showPassword = !showPassword"
       :disabled="formSend"
       @keyup="checkEnterKey($event)"
@@ -112,6 +113,13 @@ export default {
     },
     checkEnterKey (e) {
       if (e.key === 'Enter') {
+        this.login()
+      }
+    },
+    handleAccountEnter () {
+      if (!this.loginConfig.password) {
+        this.$refs.password.focus()
+      } else {
         this.login()
       }
     }
