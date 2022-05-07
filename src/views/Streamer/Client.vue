@@ -1,7 +1,7 @@
 <template>
   <div id="clientFrame" style="display: flex;height: 768px;" @mousemove="toolbarActiveChange" data-app="true">
     <div id="videoContainer" @contextmenu="showMenu">
-      <div class="slimScrollbar" id="logs" v-if="showLogs">
+      <div class="slimScrollbar" id="logs" v-bind:class="{'transplant': !showLogs}">
         <p class="logItem" v-for="log in logs" :key="log.id">{{log.Content}}</p>
         <p id="logBottom"></p>
       </div>
@@ -10,9 +10,9 @@
       <div id="danmakuListToggle" @click="danmakuListToggle">
         <div id="danmakuListToggleArrow" v-bind:class="{'danmakuListToggleArrowReverse': danmakuListShow}"></div>
       </div>
-      <video id="video-container" style="width:100%; height:100%;"></video>
+      <video ref="videoContainer" id="video-container" style="width:100%; height:100%;object-fit: contain;"></video>
       <v-menu v-model="menu" :position-x="menuX" :position-y="menuY" absolute offset-y>
-        <v-list dark style="background-color: rgba(100,100,100,.2);" ref="menuList">
+        <v-list dark style="background-color: rgba(100,100,100,.5);" ref="menuList">
           <v-list-item @click="playStatusChange">{{playStatus?'暂停': '播放'}}</v-list-item>
           <v-list-item @click="volClick">{{vols?'':'取消'}}静音</v-list-item>
           <v-list-item @click="clickHandle">视频统计信息</v-list-item>
@@ -168,13 +168,13 @@
                   <v-autocomplete hide-details height="15" @focus="holdHover=true" @blur="holdHover=false" v-model="danmakuConfig.FontFamily" :items="fontList" outlined dense solo dark label="弹幕字体" style="width: 70%;"></v-autocomplete>
                   <v-checkbox :color="$vuetify.theme.themes.light.primary" hide-details height="15" v-model="danmakuConfig.Bold" label="粗体" dense dark></v-checkbox>
                 </v-container>
-                <v-slider height="15" label="弹幕大小" min="12" max="30" v-model="danmakuConfig.FontSize" thumb-label :thumb-size="30" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary"></v-slider>
+                <v-slider height="15" label="弹幕大小" min="12" max="40" v-model="danmakuConfig.FontSize" thumb-label :thumb-size="30" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary"></v-slider>
                 <v-slider height="15" label="弹幕透明" min="3" max="10" v-model="danmakuConfig.Opacity" thumb-label :thumb-size="30" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary">
                   <template v-slot:thumb-label="{ value }">
                     {{ value*10 }}%
                   </template>
                 </v-slider>
-                <v-slider height="15" label="弹幕速度" min="5" max="200" v-model="danmakuConfig.Speed" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary"></v-slider>
+                <v-slider height="15" label="弹幕速度" min="30" max="200" v-model="danmakuConfig.Speed" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary"></v-slider>
                 <v-slider height="15" label="显示区域" v-model="danmakuConfig.Height" :thumb-size="30" step="25" min="25" dark :color="$vuetify.theme.themes.light.primary" track-color="rgba(100,100,100,.5)" :thumb-color="$vuetify.theme.themes.light.primary">
                   <template v-slot:thumb-label="{ value }">
                     {{ showAreaText(value) }}
@@ -186,9 +186,9 @@
         </v-hover>
         <v-tooltip top>
           <template v-slot:activator="{ on, attrs }">
-            <v-btn dark v-on="on" v-bind="attrs" icon><v-icon>mdi-overscan</v-icon></v-btn>
+            <v-btn dark v-on="on" v-bind="attrs" icon @click="changeVideoFit"><v-icon>mdi-overscan</v-icon></v-btn>
           </template>
-          <span>拉伸</span>
+          <span>{{videoFitText}}</span>
         </v-tooltip>
         <v-tooltip top>
           <template v-slot:activator="{ on, attrs }">
@@ -204,7 +204,7 @@
           弹幕列表
           <v-btn icon @click="clearDanmaku"><v-icon>mdi-delete</v-icon></v-btn>
         </v-subheader>
-        <v-list-item v-for="item in danmakuList" :key="item.id" dense style="flex-wrap: wrap;" @mousedown.right.stop="showMenu($event, true, item)">
+        <v-list-item v-for="item in danmakuList" :key="item.id" dense style="flex-wrap: wrap; display: block;" @mousedown.right.stop="showMenu($event, true, item)">
           <span v-if="item.SenderUserName === 'Admin'" style="color:skyblue">
             <v-icon small color="#66ccff">mdi-wrench</v-icon>
           </span>
@@ -215,7 +215,7 @@
         </v-list-item>
         <v-menu v-model="menuDanmaku" :position-x="menuX" :position-y="menuY" absolute offset-y>
           <v-list min-width="150px" dark style="background-color: rgba(100,100,100,.8);">
-            <v-list-item :disabled="currentDanmaku==null" @click="callCopy(currentDanmaku.Content)">复制 {{currentDanmaku==null?'':currentDanmaku.Content}}</v-list-item>
+            <v-list-item :disabled="currentDanmaku==null" @click="callCopy(currentDanmaku.Content)">复制弹幕内容</v-list-item>
             <v-list-item :disabled="currentDanmaku==null" @click="clickable">添加好友</v-list-item>
             <v-list-item :disabled="currentDanmaku==null" @click="sendDanmaku(currentDanmaku.Content)">复读</v-list-item>
             <v-list-item dense><v-divider></v-divider></v-list-item>
@@ -295,7 +295,9 @@ export default {
       danmakuLastStep: 0,
       danmakuMaxStep: 26,
       danmakuColors: ['#ffffff', '#000000', '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#00ffff', '#ff00ff', '#66ccff', '#7fffd4', '#00bfff', '#98fb98'],
-      captureTimer: 0
+      updateTimer: 0,
+      logTimer: 0,
+      videoFit: 0
     }
   },
   watch: {
@@ -307,12 +309,27 @@ export default {
     },
     danmakuConfig: {
       handler (val) {
-        writeLocalConfig('Config', 'DanmakuConfig', this.danmakuConfig)
+        clearTimeout(this.updateTimer)
+        this.updateTimer = setTimeout(() => {
+          writeLocalConfig('Config', 'DanmakuConfig', this.danmakuConfig)
+        }, 1000)
+        if (this.danmakuManager) this.danmakuManager.updateConfig(this.danmakuConfig)
       },
       deep: true
     }
   },
   computed: {
+    videoFitText: function () {
+      switch (this.videoFit) {
+        case 0:
+          return '居中'
+        case 1:
+          return '拉伸'
+        case 2:
+          return '铺满'
+      }
+      return ''
+    },
     volIcon: function () {
       if (this.vols === 0) return 'mdi-volume-mute'
       else if (this.vols < 50) return 'mdi-volume-medium'
@@ -330,7 +347,7 @@ export default {
       return this.showDanmaku ? 'mdi-message-processing-outline' : 'mdi-message-off-outline'
     },
     playButtonIcon: function () {
-      return this.playStatus ? 'mdi-origin' : 'mdi-steam'
+      return this.playStatus ? 'mdi-pause' : 'mdi-play'
     },
     config: function () {
       return loadLocalConfig('Config')
@@ -354,9 +371,9 @@ export default {
       this.server.Emit('RoomEntered', { id: this.$route.query.id })
     }
 
-    let config = loadLocalConfig('Config', 'DanmakuBlocker')
+    let config = loadLocalConfig('Config').DanmakuBlocker
     if (config) this.danmakuBlocker = config
-    config = loadLocalConfig('Config', 'DanmakuConfig')
+    config = loadLocalConfig('Config').DanmakuConfig
     if (config) this.danmakuConfig = config
 
     this.danmakuManager = new DanmakuManager(this.danmakuConfig)
@@ -406,7 +423,7 @@ export default {
     },
     resizeHandle () {
       const ele = document.querySelector('#clientFrame')
-      ele.style.height = `${this.thisWindow.getSize()[1] - 48 - 48}px`
+      ele.style.height = `${this.thisWindow.getSize()[1] - 48 - 48 - 36}px`
       this.danmakuManager.reCalcMaxMove()
     },
     callScreenFull () {
@@ -470,11 +487,12 @@ export default {
     },
     writeLog (log) {
       if (!log) return
-      if (!this.showLogs) {
-        setTimeout(() => {
-          this.showLogs = false
-        }, 2500)
-      }
+
+      clearTimeout(this.logTimer)
+      this.logTimer = setTimeout(() => {
+        this.showLogs = false
+      }, 2500)
+
       this.showLogs = true
       this.logs.push({ id: this.logs.length, Content: `[${moment().format('yyyy-MM-DD HH:mm:ss')}] ${log}`, Time: new Date().getTime() })
       this.$nextTick(() => {
@@ -533,7 +551,7 @@ export default {
 
         this.writeLog('房间加入成功')
         this.roomInstance = data.data.roomInfo
-        // this.server.Emit('GetPullUrl', { type: 1 })
+        this.server.Emit('GetPullUrl', { type: 1 })
         this.server.Emit('GetRoomDanmaku', '')
       }
     },
@@ -563,7 +581,6 @@ export default {
       })
       player.on(flvjs.Events.ERROR, (errorType, errorDetail, errorInfo) => {
         this.loading = true
-        clearInterval(this.captureTimer)
         this.writeLog('errorType:' + errorType)
         this.writeLog('errorDetail:' + errorDetail)
         this.writeLog('errorInfo:' + errorInfo)
@@ -583,19 +600,18 @@ export default {
       })
       player.on(flvjs.Events.LOADING_COMPLETE, () => {
         this.loading = true
-        clearInterval(this.captureTimer)
         player.pause()
         player.unload()
         player.detachMediaElement()
         player.destroy()
-        this.writeLog('主播切断了直播')
+        this.writeLog('与直播视频流断开, 尝试重连...')
+        setTimeout(() => {
+          this.server.Emit('GetPullUrl', { type: 1 })
+        }, 3000)
       })
       player.on(flvjs.Events.METADATA_ARRIVED, () => {
         this.loading = false
         this.writeLog('拉流元数据获取成功')
-        this.captureTimer = setInterval(() => {
-          this.captureImage()
-        }, 5 * 60 * 1000)
         player.play()
         this.catchFrameTimer = setInterval(() => {
           if (videoElement.buffered.length > 0) {
@@ -705,25 +721,6 @@ export default {
     clearDanmaku () {
       this.danmakuList = []
     },
-    captureImage () {
-      var canvas = document.createElement('canvas')
-      canvas.width = this.videoContainer.videoWidth * 0.5
-      canvas.height = this.videoContainer.videoHeight * 0.5
-      canvas.getContext('2d')
-        .drawImage(this.videoContainer, 0, 0, canvas.width, canvas.height)
-      canvas.toBlob((blob) => {
-        const a = new FileReader()
-        a.onload = (e) => {
-          this.uploadCapture(e.target.result)
-        }
-        a.readAsDataURL(blob)
-      })
-    },
-    uploadCapture (base64) {
-      this.server.Emit('UploadCapture', {
-        base64
-      })
-    },
     handleDanmaku (data) {
       if (this.danmakuBlocker.keywords.length > 0) {
         for (let i = 0; i < this.danmakuBlocker.keywords.length; i++) {
@@ -765,6 +762,22 @@ export default {
       Info('直播被切断，点击确定返回房间列表', data).finally(() => {
         this.$router.go(-1)
       })
+    },
+    changeVideoFit () {
+      switch (this.videoFit) {
+        case 0:
+          this.videoFit++
+          this.videoContainer.style.objectFit = 'cover'
+          break
+        case 1:
+          this.videoFit++
+          this.videoContainer.style.objectFit = 'fill'
+          break
+        case 2:
+          this.videoFit = 0
+          this.videoContainer.style.objectFit = 'contain'
+          break
+      }
     }
   },
   beforeDestroy () {
@@ -813,6 +826,10 @@ export default {
 }
 .v-label--active {
   transform-origin: top left;
+}
+.transplant {
+  opacity: 0;
+  pointer-events: none;
 }
 </style>
 
@@ -931,9 +948,10 @@ export default {
   width: 100%;
   position: absolute;
   display: flex;
-  margin-bottom: 5px;
   transition: .2s all linear;
   z-index: 10;
+  background: rgba(100,100,100,.7);
+  border-radius: 5px;
 }
 #progressCircle {
   position: absolute;
