@@ -14,6 +14,13 @@ class DanmakuManager {
     this.stillDanmakuTimeout = 4000
   }
 
+  updateConfig (config) {
+    this.changeFontFamily(config.FontFamily)
+    this.changeFontSize(config.FontSize)
+    this.changeOpacity(config.Opacity)
+    this.changeSpeed(this.calcSpeed(config.Speed))
+  }
+
   bindContainer (container = null) {
     // console.log('bindContainer')
     // this.danmakuContainer = container
@@ -26,7 +33,7 @@ class DanmakuManager {
   }
 
   resumeMove () {
-    this.moveTimerId = setInterval(this.moveDanmaku, this.calcSpeed())
+    this.moveTimerId = setInterval(this.moveDanmaku.apply(this), this.calcSpeed())
   }
 
   destroy () {
@@ -70,6 +77,8 @@ class DanmakuManager {
   changeFontSize (fontSize) {
     this.danmakuList.forEach((danmaku) => {
       danmaku.style.fontSize = fontSize + 'px'
+      danmaku.style.width = 'unset'
+      danmaku.style.width = danmaku.offsetWidth + 'px'
     })
   }
 
@@ -81,7 +90,7 @@ class DanmakuManager {
 
   changeSpeed (newSpeed) {
     clearInterval(this.moveTimerId)
-    this.moveTimerId = setInterval(this.moveDanmaku, newSpeed)
+    this.moveTimerId = setInterval(() => { this.moveDanmaku.apply(this) }, newSpeed)
   }
 
   animeEnd (element) {
@@ -113,7 +122,7 @@ class DanmakuManager {
     }; color: ${color}; font-family: ${
       this.danmakuConfig.FontFamily
     }; font-weight: ${this.danmakuConfig.Bold ? 'bold' : 'normal'}; ${self ? 'border: 1px solid rgb(54,166,242);' : ''}`
-    element.style.width = element.offsetWidth + 2 + 'px'
+    element.style.width = element.offsetWidth + 'px'
     element.width = element.offsetWidth + 2
     element.maxMove = this.danmakuContainer.clientWidth + element.width * 2
     element.move = 0
