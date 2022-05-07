@@ -208,6 +208,9 @@
           <span v-if="item.SenderUserName === 'Admin'" style="color:skyblue">
             <v-icon small color="#66ccff">mdi-wrench</v-icon>
           </span>
+          <span v-if="item.SenderUserName === roomInstance.CreatorName" style="color:skyblue">
+            <div style="color: #66ccff; border-radius: 5px; border: 1px solid #66ccff; padding: 0 5px;display: inline;">UP</div>
+          </span>
           <span v-if="!item.log" style="color:skyblue; cursor:default;">
             {{item.SenderUserName}}:
           </span>
@@ -551,7 +554,7 @@ export default {
 
         this.writeLog('房间加入成功')
         this.roomInstance = data.data.roomInfo
-        this.server.Emit('GetPullUrl', { type: 1 })
+        // this.server.Emit('GetPullUrl', { type: 1 })
         this.server.Emit('GetRoomDanmaku', '')
       }
     },
