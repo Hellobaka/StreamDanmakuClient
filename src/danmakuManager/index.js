@@ -11,7 +11,7 @@ class DanmakuManager {
     this.danmakuLastStep = 0
     this.baseSpeed = 9.5
 
-    this.stillDanmakuTimeout = 4000
+    this.stillDanmakuTimeout = 3000
   }
 
   updateConfig (config) {
@@ -46,7 +46,7 @@ class DanmakuManager {
 
   moveDanmaku () {
     this.danmakuList.forEach((danmaku) => {
-      if (!danmaku.position === 0) {
+      if (danmaku.position !== 0) {
         if (danmaku.timeout >= this.stillDanmakuTimeout) {
           this.animeEnd(danmaku)
         } else {
@@ -122,10 +122,11 @@ class DanmakuManager {
     }; color: ${color}; font-family: ${
       this.danmakuConfig.FontFamily
     }; font-weight: ${this.danmakuConfig.Bold ? 'bold' : 'normal'}; ${self ? 'border: 1px solid rgb(54,166,242);' : ''}`
-    element.style.width = element.offsetWidth + 'px'
+    element.style.width = element.offsetWidth + 2 + 'px'
     element.width = element.offsetWidth + 2
     element.maxMove = this.danmakuContainer.clientWidth + element.width * 2
     element.move = 0
+    element.timeout = 0
     element.classList.add('danmakuBase')
 
     if (position === 0) {
