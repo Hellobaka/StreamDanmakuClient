@@ -47,7 +47,7 @@
       </v-menu>
       <div @mousedown.right.stop="showMenu">
         <v-list :style="`background: transparent;overflow-y: scroll;height:${listHeight}px;`" id="danmakuList">
-          <v-list-item v-for="item in danmakuList" :key="item.id" dense @mousedown.right.stop="showMenu($event, true, item)">
+          <v-list-item v-for="item in danmakuList" style="display: block;" :key="item.id" dense @mousedown.right.stop="showMenu($event, true, item)">
             <span v-if="item.log" style="color:skyblue">
               <v-icon small color="#66ccff">mdi-wrench</v-icon>
             </span>
@@ -78,6 +78,7 @@
           <span>发送弹幕</span>
         </v-tooltip>
       </div>
+      <div id="video_container" style="width:100%; height:auto;display:none;"></div>
     </v-main>
     <v-footer ref="footer" class="Transplant08" elevation="10">
       <div @mousedown.right.stop="showMenu" style="display:flex; align-items: center; width: 100%;">
@@ -98,6 +99,7 @@ import { loadLocalConfig, copyText } from '@/utils/tools'
 import { Info, Confirm } from '@/utils/dialog'
 import moment from 'moment'
 import { RestoreWindow } from '../../utils/windowsHelper'
+const { TcPlayer } = require('@/utils/TcPlayer-module-2.4.1.js')
 
 export default {
   data () {
@@ -131,7 +133,10 @@ export default {
       danmakuColor: '#FFFFFF',
       danmakuPosition: '0',
       danmakuInputFlag: false,
-      isMuted: false
+      isMuted: false,
+      player: null,
+      captureTimer: 0,
+      videoContainer: null
     }
   },
   computed: {
@@ -159,6 +164,8 @@ export default {
     }
   },
   beforeDestroy () {
+    clearInterval(this.captureTimer)
+
     this.thisWindow.off('resize', this.resizeHandler)
     this.thisWindow.off('blur', this.blurHandler)
     this.thisWindow.off('focus', this.focusHandler)
@@ -232,6 +239,56 @@ export default {
     this.$vuetify.theme.dark = true
   },
   methods: {
+    initCapturer () {
+      this.server.On('GetPullUrl', data => {
+        if (data.code !== 200) {
+          this.snackbar.Error(data.msg)
+        } else {
+          this.player = new TcPlayer('video_container', {
+            flv: data.data.server + data.data.key,
+            h5_flv: true,
+            volume: 0,
+            width: '100%',
+            height: 'auto',
+            listener: (msg) => {
+              if (msg.type === 'load') {
+                this.player.play()
+              } else if (msg.type === 'loadedmetadata') {
+                setTimeout(() => {
+                  this.captureImage()
+                  this.player.destroy()
+                }, 1000)
+              }
+            }
+          })
+        }
+      })
+      this.server.Emit('GetPullUrl', '')
+    },
+    captureImage () {
+      this.videoContainer = document.querySelector('#video_container>.vcp-player>video')
+      var canvas = document.createElement('canvas')
+      canvas.width = this.videoContainer.videoWidth
+      canvas.height = this.videoContainer.videoHeight
+      canvas.getContext('2d')
+        .drawImage(this.videoContainer, 0, 0, canvas.width, canvas.height)
+      canvas.toBlob((blob) => {
+        const a = new FileReader()
+        a.onload = (e) => {
+          this.uploadCapture(e.target.result)
+        }
+        try {
+          a.readAsDataURL(blob)
+        } catch {
+          console.log(blob)
+        }
+      })
+    },
+    uploadCapture (base64) {
+      this.server.Emit('UploadCapture', {
+        base64
+      })
+    },
     handleDanmaku (data) {
       data.id = this.danmakuList.length
       data.log = false
@@ -359,6 +416,9 @@ export default {
           this.server.On('SwitchStream', data => {
             // start
             this.startTime = new Date().getTime()
+            this.captureTimer = setInterval(() => {
+              this.initCapturer()
+            }, 10 * 1000)
           })
           this.server.Emit('SwitchStream', { flag: true })
         }
@@ -367,7 +427,7 @@ export default {
         if (res) {
           this.danmakuList = []
           this.server.On('SwitchStream', data => {
-            // start
+            clearInterval(this.captureTimer)
           })
           this.server.Emit('SwitchStream', { flag: false })
         }
