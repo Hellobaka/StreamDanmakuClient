@@ -13,6 +13,15 @@
       </v-tooltip>
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
+          <v-btn ref="copyInviteCode" icon @click="muteList = true" v-bind="attrs" v-on="on"><v-icon>mdi-account-off</v-icon></v-btn>
+        </template>
+        <span>管理禁言列表</span>
+        <v-dialog v-model="muteList">
+          <MuteList @onDialogClose="muteList=false" v-if="muteList"></MuteList>
+        </v-dialog>
+      </v-tooltip>
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
           <v-btn ref="setTransplant" icon @click="setIgnoreMouse(!ignoreMouse)" v-bind="attrs" v-on="on" v-bind:style="ignoreMouse?'background:rgba(255,255,255,.2)':''"><v-icon>mdi-lock</v-icon></v-btn>
         </template>
         <span>窗口穿透</span>
@@ -58,19 +67,19 @@
               {{item.SenderUserName}} :
             </span>
             <span style="word-break: break-all;word-wrap: break-word;overflow: auto;">{{item.Content}}</span>
+            <v-menu v-if="!item.log" v-model="menuDanmaku" :position-x="menuX" :position-y="menuY" absolute offset-y>
+              <v-list min-width="150px" dark style="background-color: rgba(100,100,100,.8);">
+                <v-list-item @click="callCopy(item.content)">复制</v-list-item>
+                <v-list-item @click="clickable">添加好友</v-list-item>
+                <v-list-item @click="sendDanmaku(item.content)">复读</v-list-item>
+                <v-list-item dense><v-divider></v-divider></v-list-item>
+                <v-list-item @click="muteUser(item)">切换用户禁言</v-list-item>
+                <v-list-item @click="clickable">踢出</v-list-item>
+              </v-list>
+            </v-menu>
           </v-list-item>
           <div id="danmakuBottom"></div>
         </v-list>
-        <v-menu v-model="menuDanmaku" :position-x="menuX" :position-y="menuY" absolute offset-y>
-          <v-list min-width="150px" dark style="background-color: rgba(100,100,100,.8);">
-            <v-list-item @click="callCopy(item.content)">复制</v-list-item>
-            <v-list-item @click="clickable">添加好友</v-list-item>
-            <v-list-item @click="sendDanmaku(item.content)">复读</v-list-item>
-            <v-list-item dense><v-divider></v-divider></v-list-item>
-            <v-list-item @click="clickable">禁言用户</v-list-item>
-            <v-list-item @click="clickable">踢出</v-list-item>
-          </v-list>
-        </v-menu>
       </div>
       <div id="danmakuSender" style="display: flex;padding: 0 17px;">
         <input v-model="danmakuInput" @keydown.enter="sendDanmaku" type="text" class="normalInput" @focus="inputOnFocus" @blur="inputOnBlur" ref="danmakuSender">
@@ -96,8 +105,8 @@
 </template>
 
 <script>
-// eslint-disable-next-line no-unused-vars
-import { screen, Tray, Menu } from '@electron/remote'
+import { screen, Menu } from '@electron/remote'
+import MuteList from '@/components/MuteList.vue'
 import { loadLocalConfig, copyText } from '@/utils/tools'
 import { Info, Confirm } from '@/utils/dialog'
 import moment from 'moment'
@@ -105,6 +114,9 @@ import { RestoreWindow } from '../../utils/windowsHelper'
 const { TcPlayer } = require('@/utils/TcPlayer-module-2.4.1.js')
 
 export default {
+  components: {
+    MuteList
+  },
   data () {
     return {
       onlineCount: 0,
@@ -139,7 +151,8 @@ export default {
       isMuted: false,
       player: null,
       captureTimer: 0,
-      videoContainer: null
+      videoContainer: null,
+      muteList: false
     }
   },
   computed: {
@@ -242,6 +255,18 @@ export default {
     this.$vuetify.theme.dark = true
   },
   methods: {
+    muteUser (item) {
+      this.server.On('MuteUser', data => {
+        if (data.code === 200) {
+          const arr = data.data
+          if (arr.includes(item.SenderUserID)) this.writeLog('已禁言用户' + item.SenderUserName)
+          else this.writeLog('已解除用户' + item.SenderUserName + '禁言')
+        } else {
+          this.snackbar.Error(data.msg)
+        }
+      })
+      this.server.Emit('MuteUser', { id: [item.SenderUserID] })
+    },
     initCapturer () {
       this.server.On('GetPullUrl', data => {
         if (data.code !== 200) {

@@ -53,6 +53,16 @@
             </v-list-item-content>
           </v-list-item>
           <v-subheader>操作</v-subheader>
+          <v-list-item @click="manageMuteList">
+            <v-list-item-content>
+              <v-list-item-title>禁言管理</v-list-item-title>
+              <v-list-item-subtitle>管理个人房间的禁言用户列表</v-list-item-subtitle>
+            </v-list-item-content>
+            <v-list-item-action><v-icon>mdi-menu-right</v-icon></v-list-item-action>
+            <v-dialog v-model="muteList" max-width="750">
+              <MuteList @onDialogClose="muteList=false" v-if="muteList"></MuteList>
+            </v-dialog>
+          </v-list-item>
           <v-list-item @click="changePassword = true">
             <v-list-item-content>
               <v-list-item-title>修改密码</v-list-item-title>
@@ -84,6 +94,7 @@
 
 <script>
 import ChangeEmail from './ChangeEmail'
+import MuteList from './MuteList'
 import ChangePassword from './ChangePassword.vue'
 import { readSessionStorage, writeSessionStorage, logout } from '../utils/tools'
 const { Confirm } = require('../utils/dialog')
@@ -92,7 +103,8 @@ export default {
   name: 'UserCenter',
   components: {
     ChangeEmail,
-    ChangePassword
+    ChangePassword,
+    MuteList
   },
   data () {
     return {
@@ -101,7 +113,8 @@ export default {
       server: Window.$WebSocket,
       nickEditFlag: false,
       changeEmail: false,
-      changePassword: false
+      changePassword: false,
+      muteList: false
     }
   },
   methods: {
@@ -111,6 +124,9 @@ export default {
         this.closeDialog()
         logout(this.$router)
       }
+    },
+    manageMuteList () {
+      this.muteList = true
     },
     clickHandle () {},
     onNickNameChange (e) {

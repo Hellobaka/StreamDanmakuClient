@@ -10,8 +10,8 @@ export function LoadStreamerURL (router, url, isClient = false) {
     MainWindow.setSize(1600, 900)
     MainWindow.center()
   } else {
-    MainWindow.setMinimumSize(447, 200)
-    MainWindow.setSize(450, 600)
+    MainWindow.setMinimumSize(475, 200)
+    MainWindow.setSize(500, 600)
   }
   router.push(url)
 }
