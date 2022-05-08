@@ -27,7 +27,6 @@ function init () {
   }
   server.connection.onclose = async (e) => {
     console.log('Disconnect from Server.')
-    if (this.OnClose) this.OnClose()
     reconnect()
   }
   server.connection.onerror = (e) => {
@@ -38,7 +37,6 @@ function init () {
     console.log('Connected to Server.')
     const token = readSessionStorage('JWT')
     Emit('GetInfo', { type: 'client', jwt: token || '' })
-    if (this.OnOpen) this.OnOpen()
   }
 }
 function Emit (type, msg) {
