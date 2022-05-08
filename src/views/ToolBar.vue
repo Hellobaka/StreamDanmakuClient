@@ -58,16 +58,26 @@
           </v-list>
         </v-menu>
         <v-spacer></v-spacer>
-        <v-avatar class="clickable" @click="globalSettingOn = true">
+        <v-btn icon @click="globalSettingOn = true">
           <v-icon>
             mdi-cog
           </v-icon>
-        </v-avatar>
-        <v-avatar size="24" class="clickable" color="indigo" @click="OpenUserCenter">
+        </v-btn>
+        <v-menu v-model="showFriendList" offset-y offset-x :close-on-click="false" :close-on-content-click="false">
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn icon color="primary" @click="calcMenuOffset" v-bind="attrs" v-on="on">
+              <v-icon>
+                mdi-account-multiple
+              </v-icon>
+            </v-btn>
+          </template>
+          <FriendList @onDialogClose="showFriendList=false"></FriendList>
+        </v-menu>
+        <v-btn icon color="primary" @click="OpenUserCenter">
           <v-icon dark>
             mdi-account-circle
           </v-icon>
-        </v-avatar>
+        </v-btn>
       </v-toolbar>
 
       <router-view />
@@ -87,6 +97,7 @@
 
 <script>
 import UserCenter from '../components/UserCenter.vue'
+import FriendList from '../components/FriendList.vue'
 import GlobalSetting from '../components/GlobalSetting.vue'
 const { readSessionStorage, routerJump, emit, logout } = require('../utils/tools')
 const { Confirm } = require('../utils/dialog')
@@ -95,7 +106,8 @@ export default {
   name: 'ToolBar',
   components: {
     UserCenter,
-    GlobalSetting
+    GlobalSetting,
+    FriendList
   },
   data: () => ({
     globalThis: global,
@@ -103,9 +115,13 @@ export default {
     server: Window.$WebSocket,
     userCenterOn: false,
     globalSettingOn: false,
-    config: null
+    config: null,
+    showFriendList: false
   }),
   methods: {
+    calcMenuOffset (e) {
+      this.showFriendList = true
+    },
     async callLogout () {
       const res = await Confirm('确认要注销吗？', '注销提醒')
       if (res) {
