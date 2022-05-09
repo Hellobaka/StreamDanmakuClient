@@ -413,8 +413,8 @@ export default {
       addListener('player-danmaku', () => {
         this.showDanmakuChange()
       })
-      addListener('player-exit', () => {
-        this.closeClient()
+      addListener('player-exit', (flag) => {
+        this.closeClient(flag)
       })
     },
     ipcOff () {
@@ -745,7 +745,11 @@ export default {
         this.AddDanmaku(data.Content, data.Color, data.Position, data.SenderUserName === 'Admin', data.SenderUserName === this.user.nickName, data.SenderUserName === this.roomInstance.CreatorName)
       }
     },
-    async closeClient () {
+    async closeClient (flag) {
+      if (flag) {
+        this.$router.go(-1)
+        return
+      }
       const res = await Confirm('不看了吗？', '确认')
       if (res) {
         // this.thisWindow.hide()

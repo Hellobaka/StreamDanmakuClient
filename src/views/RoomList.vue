@@ -189,6 +189,10 @@ export default {
     },
     async enterRoom (id) {
       const room = this.roomList.find(x => x.RoomID === id)
+      if (!room) {
+        this.snackbar.Error('房间不存在或无法加入')
+        return
+      }
       if (room.RoomID === this.server.user.Id) {
         const res = await Confirm('点击确定恢复主播身份进入，点击取消则以观众身份进入', '提示')
         if (res) {
@@ -309,6 +313,9 @@ export default {
       })
       addListener('roomList-top', () => {
         this.callTop()
+      })
+      addListener('join-room', id => {
+        this.enterRoom(id)
       })
     },
     ipcOff () {
