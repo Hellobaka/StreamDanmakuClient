@@ -103,7 +103,7 @@
 
 <script>
 import { Info } from '../utils/dialog'
-import { md5Encrypt, routerJump, writeSessionStorage } from '../utils/tools'
+import { logout, md5Encrypt, writeSessionStorage } from '../utils/tools'
 
 export default {
   name: 'ChangePassword',
@@ -231,7 +231,7 @@ export default {
           this.snackbar.Error(data.msg)
         }
       })
-      this.server.Emit('GetEmailCaptcha', { email: this.forgetForm.email })
+      this.server.Emit('GetEmailCaptcha', { email: this.forgetForm.email, action: 'ChangePassword' })
     },
     forget_confirmpwdVerify () {
       if (this.forgetForm.newpwd !== this.forgetForm.confirmnewpwd) {
@@ -266,13 +266,13 @@ export default {
         if (data.code === 200) {
           Info('修改成功，点击确定重新登录。', '密码重置').then(async () => {
             writeSessionStorage('JWT', '')
-            routerJump(this.$router, '/login', true)
+            logout(this.$router)
           })
         } else {
           this.snackbar.Error(data.msg)
         }
       })
-      this.server.Emit('ChangePassword', { newPwd: md5Encrypt(this.forgetForm.newpwd) })
+      this.server.Emit('ChangePassword', { newPassword: md5Encrypt(this.forgetForm.newpwd), email: this.forgetForm.email })
     }
   }
 }

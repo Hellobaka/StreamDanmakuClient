@@ -36,6 +36,7 @@
 </template>
 
 <script>
+import { logout, md5Encrypt } from '../utils/tools'
 // const { md5Encrypt } = require('../utils/tools')
 export default {
   data () {
@@ -57,14 +58,15 @@ export default {
       getCaptchaIntervalCD: 0,
       rules: {
         account: [val => {
-          const r = (val || '').length > 0 || '用户名不得为空'
+          let r = (val || '').length > 0 || '用户名不得为空'
+          if (val.length < 3) r = '用户名不得少于3个字符'
           this.formPass[0] = this.rulesQuery(r)
           return r
         }],
         email: [val => {
           let r = (val || '').length > 0 || '邮箱不得为空'
           if (r !== '邮箱不得为空') {
-            if (!/^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/.test(val)) { r = 'Invalid Email' }
+            if (!/^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/.test(val)) { r = '邮箱格式错误' }
           }
           this.formPass[1] = this.rulesQuery(r)
           return r
@@ -104,7 +106,9 @@ export default {
       // this.confirmPassword = md5Encrypt(this.confirmPassword)
       this.formSend = true
       this.server.On('VerifyEmailCaptcha', (data) => {
+        this.formSend = false
         if (data.code === 200) {
+          this.form.Password = md5Encrypt(this.form.Password)
           this.server.Emit('Register', this.form)
         } else {
           this.snackbar.Error(data.msg)
@@ -113,7 +117,8 @@ export default {
       this.server.On('Register', (data) => {
         this.formSend = false
         if (data.code === 200) {
-          this.snackbar.Success(data.msg)
+          this.snackbar.Success('注册成功')
+          logout(this.$router)
         } else {
           this.snackbar.Error(data.msg)
         }

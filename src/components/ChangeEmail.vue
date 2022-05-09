@@ -38,7 +38,8 @@
 </template>
 
 <script>
-import { readSessionStorage, rulesVerify } from '../utils/tools'
+import { Info } from '../utils/dialog'
+import { readSessionStorage, rulesVerify, writeSessionStorage } from '../utils/tools'
 export default {
   name: 'ChangeEmail',
   data () {
@@ -95,7 +96,7 @@ export default {
             this.snackbar.Error(data.msg)
           }
         })
-        this.server.Emit('GetEmailCaptcha', { id: this.user.Id, email: this.verifyOldEmailFlag ? this.user.Email : this.newEmail })
+        this.server.Emit('GetEmailCaptcha', { id: this.user.Id, email: this.verifyOldEmailFlag ? this.user.Email : this.newEmail, action: 'ChangeEmail' })
         this.formSend = true
       }
     },
@@ -121,8 +122,14 @@ export default {
         this.server.On('ChangeEmail', data => {
           this.formSend = false
           if (data.code === 200) {
-            this.snackbar.Success('修改成功')
-            window.location.reload()
+            Info('修改成功，点击确定重新登录。', '邮箱修改')
+              .then(async () => {
+                writeSessionStorage('user', null)
+                writeSessionStorage('JWT', null)
+              })
+              .finally(() => {
+                window.location.href = './'
+              })
           } else {
             this.snackbar.Error(data.msg)
           }
