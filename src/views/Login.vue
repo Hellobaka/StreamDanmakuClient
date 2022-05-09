@@ -44,7 +44,7 @@ export default {
       formPass: [false, false],
       rules: {
         account: [val => {
-          if ((val || '').length > 3) {
+          if ((val || '').length >= 3) {
             this.formPass[0] = true
             return true
           }

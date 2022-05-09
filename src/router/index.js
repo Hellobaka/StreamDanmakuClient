@@ -65,6 +65,12 @@ const routes = [
 const router = new VueRouter({
   routes
 })
+export function resetRouter () {
+  const newRouter = new VueRouter({
+    routes
+  })
+  router.matcher = newRouter.matcher // the relevant part
+}
 const whiteList = ['/login', '/register', '/forgetpwd']
 router.beforeEach(async (to, from, next) => {
   document.title = `${to.name} - webrtc-client`

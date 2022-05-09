@@ -48,7 +48,7 @@
 </template>
 
 <script>
-const { rulesVerify, writeSessionStorage, md5Encrypt, writeLocalConfig } = require('../utils/tools')
+const { rulesVerify, writeSessionStorage, md5Encrypt, logout } = require('../utils/tools')
 const { Info } = require('../utils/dialog')
 export default {
   name: 'ChangePassword',
@@ -101,16 +101,16 @@ export default {
       if (this.formPass.some((x) => x === false)) {
         this.snackbar.Error('请先完成表单')
       } else {
-        this.server.On('ChangePassword', (data) => {
+        this.server.On('ChangePasswordOnline', (data) => {
           this.formSend = false
           if (data.code === 200) {
             Info('修改成功，点击确定重新登录。', '密码修改')
               .then(async () => {
                 writeSessionStorage('user', null)
-                writeLocalConfig('JWT', 'token', '')
+                writeSessionStorage('JWT', null)
               })
               .finally(() => {
-                window.location.href = './'
+                logout(this.$router)
               })
           } else {
             this.snackbar.Error(data.msg)
@@ -120,7 +120,7 @@ export default {
           oldPassword: md5Encrypt(this.form.oldPassword),
           newPassword: md5Encrypt(this.form.newPassword)
         }
-        this.server.Emit('ChangePassword', encryptForm)
+        this.server.Emit('ChangePasswordOnline', encryptForm)
         this.formSend = true
       }
     }

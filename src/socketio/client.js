@@ -1,8 +1,9 @@
-const url = 'ws://127.0.0.1:6235/main'
 let reconnectCount = 0
 
 const { Info } = require('../utils/dialog')
-const { writeSessionStorage, routerJump, readSessionStorage } = require('../utils/tools')
+const { writeSessionStorage, readSessionStorage, loadLocalConfig, logout } = require('../utils/tools')
+
+const url = loadLocalConfig('Config').server
 
 Window.$WebSocket = { connection: new WebSocket(url) }
 const server = Window.$WebSocket
@@ -26,11 +27,11 @@ function init () {
     }
   }
   server.connection.onclose = async (e) => {
-    console.log('Disconnect from Server.')
+    console.log('Disconnect from Server.', e)
     reconnect()
   }
   server.connection.onerror = (e) => {
-    console.log(`Connection Error, ${e}`)
+    console.log('Connection Error', e)
   }
   server.connection.onopen = async (e) => {
     reconnectCount = 0
@@ -67,7 +68,7 @@ server.On('GetInfoResult', async (data) => {
     await Info(data.msg)
     server.TempGetInfoCallback(data)
     server.TempGetInfoCallback = (data) => {}
-    routerJump(null, './', true)
+    logout(this.$router)
   } else {
     if (data.data) {
       server.user = data.data

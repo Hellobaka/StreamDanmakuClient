@@ -106,7 +106,7 @@
 import UserCenter from '../components/UserCenter.vue'
 import FriendList from '../components/FriendList.vue'
 import GlobalSetting from '../components/GlobalSetting.vue'
-const { readSessionStorage, routerJump, emit, logout, addListener } = require('../utils/tools')
+const { readSessionStorage, emit, logout, addListener } = require('../utils/tools')
 const { Confirm } = require('../utils/dialog')
 
 export default {
@@ -144,7 +144,7 @@ export default {
       else {
         const res = await Confirm('暂未登录，是否前往登录页面？', '未登录')
         if (res) {
-          routerJump(this.$router, './', true)
+          logout(this.$router)
         }
       }
     },

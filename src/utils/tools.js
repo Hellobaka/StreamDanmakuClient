@@ -6,6 +6,7 @@ const path = require('path')
 const { app, session } = require('@electron/remote')
 import store from '@/store'
 import { clipboard } from 'electron'
+import { resetRouter } from '../router'
 const snackbar = require('@/utils/snackbar').default
 import { Confirm } from './dialog'
 
@@ -13,22 +14,16 @@ const md5 = require('js-md5')
 const SALT = 'I AM FW'
 
 const isDev = !app.isPackaged
-const appRoot = isDev ? path.resolve(__dirname, '..', '..') : path.resolve(app.getAppPath(), '..', '..')
-const userDataPath = path.resolve('E:\\Code\\webrtc-client\\dist_electron', 'userData')
-const loginConfigPath = path.resolve(userDataPath, 'Config.json')
-const userPath = app.getPath('userData')
-
+const appRoot = isDev ? path.resolve(__dirname, '..', '..') : path.resolve(app.getAppPath(), '..')
+const userDataPath = path.resolve(appRoot, 'userData')
+const configPath = path.resolve(userDataPath, 'Config.json')
 fs.ensureDir(userDataPath)
-function getUserConfigPath () {
-  return path.resolve(userDataPath, loadLocalConfig('Session', true).UserID.toString(), 'Config.json')
-}
 export function md5Encrypt (msg, salt = true) {
   if (salt) msg += SALT
   return md5(msg)
 }
-export function writeLocalConfig (section, key, value, isLoginConfig = false) {
+export function writeLocalConfig (section, key, value) {
   console.log('write config: ', section, key, value)
-  const configPath = isLoginConfig ? loginConfigPath : getUserConfigPath()
   fs.ensureDir(path.dirname(configPath))
   if (fs.existsSync(configPath)) {
     const mainConfig = fs.readJSONSync(configPath)
@@ -39,13 +34,13 @@ export function writeLocalConfig (section, key, value, isLoginConfig = false) {
     fs.writeJSONSync(configPath, {})
   }
 }
-export function routerJump (router, path, replace = false) {
-  if (path === './') window.location.href = './index.html'
-  else if (replace) router.replace({ path })
-  else router.push(path)
+export function routerJump (router, path, clearHistory = false) {
+  if (clearHistory) {
+    resetRouter()
+    router.push(path)
+  } else router.push(path)
 }
-export function loadLocalConfig (section, isLoginConfig = false) {
-  const configPath = isLoginConfig ? loginConfigPath : getUserConfigPath()
+export function loadLocalConfig (section) {
   fs.ensureDir(path.dirname(configPath))
   if (fs.existsSync(configPath)) {
     try {
@@ -83,6 +78,7 @@ export function getTemplateConfig () {
       password: ''
     },
     Config: {
+      server: 'ws://127.0.0.1:6235/main',
       themeColor: '#3f51b5',
       danmakuDefault: true,
       danmakuRemember: true
@@ -99,6 +95,7 @@ export async function logout (router) {
   writeLocalConfig('Config', 'autoLogin', false)
   writeSessionStorage('user', null)
   writeSessionStorage('JWT', null)
+  Window.$WebSocket.Emit('logout')
   routerJump(router, './', true)
 }
 const listener = []
