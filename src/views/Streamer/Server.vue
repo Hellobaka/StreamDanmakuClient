@@ -375,7 +375,7 @@ export default {
       }, 100)
       const winW = screen.getPrimaryDisplay().workAreaSize.width
       const winH = screen.getPrimaryDisplay().workAreaSize.height
-      this.thisWindow.setPosition(parseInt(winW * 0.75), parseInt(winH * 0.15))
+      this.thisWindow.setPosition(parseInt(winW * 0.70), parseInt(winH * 0.15))
 
       this.thisWindow.on('resize', this.resizeHandler)
       this.thisWindow.on('blur', this.blurHandler)
