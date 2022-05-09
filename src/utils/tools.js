@@ -98,6 +98,7 @@ export function rulesVerify (result) {
 export async function logout (router) {
   writeLocalConfig('Config', 'autoLogin', false)
   writeSessionStorage('user', null)
+  writeSessionStorage('JWT', null)
   routerJump(router, './', true)
 }
 const listener = []
