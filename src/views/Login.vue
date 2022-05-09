@@ -28,7 +28,7 @@
 </template>
 
 <script>
-import { loadLocalConfig, writeLocalConfig, writeSessionStorage } from '../utils/tools'
+import { emit, loadLocalConfig, writeLocalConfig, writeSessionStorage } from '../utils/tools'
 export default {
   name: 'Login',
   data () {
@@ -85,6 +85,14 @@ export default {
         this.formSend = false
         if (data.code === 200) {
           this.snackbar.Success('登录成功')
+          this.server.On('GetFriendRequestCount', data => {
+            if (data.code === 200) {
+              emit('notification-count', data.data)
+            } else {
+              this.snackbar.Error(data.msg)
+            }
+          })
+          this.server.Emit('GetFriendRequestCount')
           if (this.loginConfig.rememberPassword) {
             writeLocalConfig('LoginConfig', 'password', this.loginConfig.password, true)
           }
