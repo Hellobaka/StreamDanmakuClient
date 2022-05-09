@@ -374,10 +374,10 @@ export default {
       this.server.Emit('RoomEntered', { id: this.$route.query.id })
     }
 
-    let config = loadLocalConfig('Config').DanmakuBlocker
-    if (config) this.danmakuBlocker = config
-    config = loadLocalConfig('Config').DanmakuConfig
-    if (config) this.danmakuConfig = config
+    const config = loadLocalConfig('Config')
+    if (config.DanmakuBlocker) this.danmakuBlocker = config.DanmakuBlocker
+    if (config.DanmakuConfig) this.danmakuConfig = config.DanmakuConfig
+    if (config.vol) this.vols = config.vol
 
     this.danmakuManager = new DanmakuManager(this.danmakuConfig)
     this.danmakuManager.bindContainer(this.$refs.danmakuContainer)
@@ -574,6 +574,7 @@ export default {
     },
     volChange () {
       this.videoPlayer.volume = this.vols / 100
+      writeLocalConfig('Config', 'vol', this.vols)
     },
     createVideo (url) {
       const videoElement = document.getElementById('video-container')
@@ -582,6 +583,7 @@ export default {
         url,
         isLive: true
       })
+      player.volume = this.vols / 100
       player.on(flvjs.Events.ERROR, (errorType, errorDetail, errorInfo) => {
         this.loading = true
         this.writeLog('errorType:' + errorType)
