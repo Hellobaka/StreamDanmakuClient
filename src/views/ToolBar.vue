@@ -65,13 +65,20 @@
         </v-btn>
         <v-menu v-model="showFriendList" offset-y offset-x :close-on-click="false" :close-on-content-click="false">
           <template v-slot:activator="{ on, attrs }">
-            <v-btn icon color="primary" @click="calcMenuOffset" v-bind="attrs" v-on="on">
-              <v-icon>
-                mdi-account-multiple
-              </v-icon>
+            <v-btn icon color="primary" v-bind="attrs" v-on="on">
+              <v-badge
+                :content="notificationCount"
+                :value="notificationCount"
+                color="primary"
+                overlap
+              >
+                <v-icon>
+                  mdi-account-multiple
+                </v-icon>
+              </v-badge>
             </v-btn>
           </template>
-          <FriendList @onDialogClose="showFriendList=false"></FriendList>
+          <FriendList v-if="showFriendList" @onDialogClose="showFriendList=false"></FriendList>
         </v-menu>
         <v-btn icon color="primary" @click="OpenUserCenter">
           <v-icon dark>
@@ -99,7 +106,7 @@
 import UserCenter from '../components/UserCenter.vue'
 import FriendList from '../components/FriendList.vue'
 import GlobalSetting from '../components/GlobalSetting.vue'
-const { readSessionStorage, routerJump, emit, logout } = require('../utils/tools')
+const { readSessionStorage, routerJump, emit, logout, addListener } = require('../utils/tools')
 const { Confirm } = require('../utils/dialog')
 
 export default {
@@ -116,12 +123,10 @@ export default {
     userCenterOn: false,
     globalSettingOn: false,
     config: null,
-    showFriendList: false
+    showFriendList: false,
+    notificationCount: 0
   }),
   methods: {
-    calcMenuOffset (e) {
-      this.showFriendList = true
-    },
     async callLogout () {
       const res = await Confirm('确认要注销吗？', '注销提醒')
       if (res) {
@@ -155,10 +160,25 @@ export default {
     },
     callListener (event) {
       emit(event)
+    },
+    fetchRequestCount () {
+      this.server.On('GetFriendRequestCount', data => {
+        if (data.code === 200) {
+          emit('notification-count', data.data)
+          this.notificationCount = data.data
+        } else {
+          this.snackbar.Error(data.msg)
+        }
+      })
+      this.server.Emit('GetFriendRequestCount')
     }
   },
   mounted () {
+    this.server.On('OnFriendRequest', this.fetchRequestCount)
     this.init()
+    addListener('notification-count', (count) => {
+      this.notificationCount = count
+    })
   }
 }
 </script>
