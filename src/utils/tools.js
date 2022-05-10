@@ -16,6 +16,7 @@ const SALT = 'I AM FW'
 const isDev = !app.isPackaged
 const appRoot = isDev ? path.resolve(__dirname, '..', '..') : path.resolve(app.getAppPath(), '..')
 const userDataPath = path.resolve(appRoot, 'userData')
+console.log(userDataPath)
 const configPath = path.resolve(userDataPath, 'Config.json')
 fs.ensureDir(userDataPath)
 export function md5Encrypt (msg, salt = true) {
@@ -110,4 +111,14 @@ export function emit (event, ...args) {
   if (listener[event]) {
     listener[event](...args)
   }
+}
+export function getAppVersion () {
+  return require('@electron/remote').app.getVersion()
+}
+export function callExe (args) {
+  const { exec } = require('child_process')
+  const updatePath = path.resolve(appRoot, 'StreamDanmaku_Updater.exe')
+  exec(`${updatePath} ${args}`, () => {
+    require('@electron/remote').app.exit()
+  })
 }

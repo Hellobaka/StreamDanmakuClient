@@ -54,12 +54,15 @@
             </v-list-item-content>
             <v-list-item-action><v-icon>mdi-menu-right</v-icon></v-list-item-action>
           </v-list-item>
-          <v-list-item @click="clickHandle">
+          <v-list-item @click="checkUpdateDialog=true">
             <v-list-item-content>
               <v-list-item-title>检查更新</v-list-item-title>
               <v-list-item-subtitle>从服务器拉取更新</v-list-item-subtitle>
             </v-list-item-content>
             <v-list-item-action><v-icon>mdi-menu-right</v-icon></v-list-item-action>
+            <v-dialog v-model="checkUpdateDialog" max-width="400">
+              <CheckUpdate @onDialogClose="checkUpdateDialog=false" v-if="checkUpdateDialog"></CheckUpdate>
+            </v-dialog>
           </v-list-item>
         </v-list>
       </v-container>
@@ -73,9 +76,13 @@
 </template>
 
 <script>
-const { writeLocalConfig, loadLocalConfig } = require('../utils/tools')
+import CheckUpdate from './CheckUpdate.vue'
+const { writeLocalConfig, loadLocalConfig, getAppVersion } = require('../utils/tools')
 export default {
   name: 'GlobalSetting',
+  components: {
+    CheckUpdate
+  },
   data () {
     return {
       Config: {
@@ -86,7 +93,8 @@ export default {
       globalThis: global,
       colorPicker: false,
       color: '',
-      currentVersion: '1.0.0'
+      currentVersion: '',
+      checkUpdateDialog: false
     }
   },
   methods: {
@@ -107,6 +115,7 @@ export default {
   mounted () {
     const config = loadLocalConfig('Config')
     if (config) this.Config = config
+    this.currentVersion = getAppVersion()
   }
 }
 </script>

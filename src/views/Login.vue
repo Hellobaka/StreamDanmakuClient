@@ -28,7 +28,7 @@
 </template>
 
 <script>
-import { emit, loadLocalConfig, writeLocalConfig, writeSessionStorage } from '../utils/tools'
+import { emit, getAppVersion, loadLocalConfig, writeLocalConfig, writeSessionStorage } from '../utils/tools'
 export default {
   name: 'Login',
   data () {
@@ -130,9 +130,28 @@ export default {
       } else {
         this.login()
       }
+    },
+    checkUpdate () {
+      const version = getAppVersion()
+      this.server.On('Update', data => {
+        if (data.code === 200) {
+          if (data.data) {
+            if (version !== data.data.version) {
+              this.snackbar.Info('发现新版本，请点击上方的齿轮内检查更新')
+            }
+          } else {
+            this.snackbar.Success('检查更新完成')
+          }
+        } else {
+          this.snackbar.Error(data.msg)
+        }
+      })
+      this.server.Emit('Update', { version })
     }
   },
   mounted () {
+    console.log()
+    this.checkUpdate()
     this.loginConfig = loadLocalConfig('LoginConfig', true)
     if (this.loginConfig.autoLogin) {
       this.login()
