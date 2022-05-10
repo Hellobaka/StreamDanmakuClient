@@ -88,6 +88,7 @@
           :append-icon="passwordDisplay ? 'mdi-eye' : 'mdi-eye-off'"
           :rules="[forget_confirmpwdVerify]"
           @click:append="passwordDisplay = !passwordDisplay"
+          @keydown.enter="forgetHandler"
         />
         <v-btn
           color="primary"
