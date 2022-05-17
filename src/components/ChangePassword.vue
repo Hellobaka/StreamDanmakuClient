@@ -3,7 +3,7 @@
     <v-card-title>
       修改密码
       <v-spacer></v-spacer>
-      <v-btn icon @click="closeDialog">
+      <v-btn icon @click="closeDialog(false)">
         <v-icon>mdi-window-close</v-icon>
       </v-btn>
     </v-card-title>
@@ -39,7 +39,7 @@
     </v-card-text>
     <v-card-actions>
       <v-spacer></v-spacer>
-      <v-btn text @click="closeDialog">关闭</v-btn>
+      <v-btn text @click="closeDialog(false)">关闭</v-btn>
       <v-btn text color="primary" :loading="formSend" @click="changePassword"
         >提交</v-btn
       >
@@ -94,8 +94,8 @@ export default {
     }
   },
   methods: {
-    closeDialog () {
-      this.$emit('onDialogClose', true)
+    closeDialog (flag) {
+      this.$emit('onDialogClose', flag)
     },
     changePassword () {
       if (this.formPass.some((x) => x === false)) {
@@ -111,6 +111,7 @@ export default {
               })
               .finally(() => {
                 logout(this.$router)
+                this.closeDialog(true)
               })
           } else {
             this.snackbar.Error(data.msg)

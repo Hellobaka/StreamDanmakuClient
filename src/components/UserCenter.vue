@@ -72,7 +72,7 @@
             </v-list-item-content>
             <v-list-item-action><v-icon>mdi-menu-right</v-icon></v-list-item-action>
             <v-dialog v-model="changePassword" max-width="400">
-              <ChangePassword @onDialogClose="changePassword=false" v-if="changePassword"></ChangePassword>
+              <ChangePassword @onDialogClose="handleChangePasswordClose" v-if="changePassword"></ChangePassword>
             </v-dialog>
           </v-list-item>
           <v-list-item @click="callLogout">
@@ -118,6 +118,10 @@ export default {
     }
   },
   methods: {
+    handleChangePasswordClose (flag) {
+      if (flag) this.closeDialog()
+      this.changePassword = false
+    },
     async callLogout () {
       const res = await Confirm('确认要注销吗？', '注销提醒')
       if (res) {
