@@ -204,6 +204,7 @@ export default {
       }
     },
     searchFriend () {
+      if (!this.search) return
       this.searchFriendList = []
       this.server.Emit('FindFriend', { query: this.search })
     },
