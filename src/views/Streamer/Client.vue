@@ -219,7 +219,7 @@
         <v-menu v-model="menuDanmaku" :position-x="menuX" :position-y="menuY" absolute offset-y>
           <v-list min-width="150px" dark style="background-color: rgba(100,100,100,.8);">
             <v-list-item :disabled="currentDanmaku==null" @click="callCopy(currentDanmaku.Content)">复制弹幕内容</v-list-item>
-            <v-list-item :disabled="currentDanmaku==null" @click="clickable">添加好友</v-list-item>
+            <v-list-item :disabled="currentDanmaku==null" @click="addFriend(currentDanmaku.SenderUserID)">添加好友</v-list-item>
             <v-list-item :disabled="currentDanmaku==null" @click="sendDanmaku(currentDanmaku.Content)">复读</v-list-item>
             <v-list-item dense><v-divider></v-divider></v-list-item>
             <v-list-item :disabled="currentDanmaku==null || canBlock(currentDanmaku)" @click="clearDanmaku">屏蔽用户</v-list-item>
@@ -554,7 +554,7 @@ export default {
 
         this.writeLog('房间加入成功')
         this.roomInstance = data.data.roomInfo
-        // this.server.Emit('GetPullUrl', { type: 1 })
+        this.server.Emit('GetPullUrl', { type: 1 })
         this.server.Emit('GetRoomDanmaku', '')
       }
     },
@@ -583,7 +583,6 @@ export default {
         url,
         isLive: true
       })
-      player.volume = this.vols / 100
       player.on(flvjs.Events.ERROR, (errorType, errorDetail, errorInfo) => {
         this.loading = true
         this.writeLog('errorType:' + errorType)
@@ -616,6 +615,7 @@ export default {
       })
       player.on(flvjs.Events.METADATA_ARRIVED, () => {
         this.loading = false
+        player.volume = this.vols / 100
         this.writeLog('拉流元数据获取成功')
         player.play()
         this.catchFrameTimer = setInterval(() => {
@@ -787,6 +787,16 @@ export default {
           this.videoContainer.style.objectFit = 'contain'
           break
       }
+    },
+    addFriend (id) {
+      this.server.On('CreateFriendRequest', data => {
+        if (data.code === 200) {
+          this.snackbar.Success('申请已发送')
+        } else {
+          this.snackbar.Error(data.msg)
+        }
+      })
+      this.server.Emit('CreateFriendRequest', { to: id })
     }
   },
   beforeDestroy () {

@@ -70,7 +70,7 @@
             <v-menu v-if="!item.log" v-model="menuDanmaku" :position-x="menuX" :position-y="menuY" absolute offset-y>
               <v-list min-width="150px" dark style="background-color: rgba(100,100,100,.8);">
                 <v-list-item @click="callCopy(item.content)">复制</v-list-item>
-                <v-list-item @click="clickable">添加好友</v-list-item>
+                <v-list-item @click="addFriend(item.SenderUserID)">添加好友</v-list-item>
                 <v-list-item @click="sendDanmaku(item.content)">复读</v-list-item>
                 <v-list-item dense><v-divider></v-divider></v-list-item>
                 <v-list-item @click="muteUser(item)">切换用户禁言</v-list-item>
@@ -444,9 +444,9 @@ export default {
           this.server.On('SwitchStream', data => {
             // start
             this.startTime = new Date().getTime()
-            // this.captureTimer = setInterval(() => {
-            //   this.initCapturer()
-            // }, 10 * 1000)
+            this.captureTimer = setInterval(() => {
+              this.initCapturer()
+            }, 60 * 1000)
           })
           this.server.Emit('SwitchStream', { flag: true })
         }
@@ -515,6 +515,16 @@ export default {
       Info('直播已被切断，点击确认返回房间列表', data).finally(() => {
         this.$router.go(-1)
       })
+    },
+    addFriend (id) {
+      this.server.On('CreateFriendRequest', data => {
+        if (data.code === 200) {
+          this.snackbar.Success('申请已发送')
+        } else {
+          this.snackbar.Error(data.msg)
+        }
+      })
+      this.server.Emit('CreateFriendRequest', { to: id })
     }
   }
 }
